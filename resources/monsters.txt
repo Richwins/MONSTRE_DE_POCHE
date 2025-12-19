@@ -1,0 +1,60 @@
+Monster
+Name Pikachu
+Type Electric
+HP 110 141
+Speed 110 141
+Attack 75 106
+Defense 50 82
+Paralysis 0.2
+EndMonster
+
+Monster
+Name Squirtle
+Type Water
+HP 100 130
+Speed 90 120
+Attack 65 95
+Defense 70 100
+Flood 0.3
+Fall 0.2
+EndMonster
+
+Monster
+Name Onix
+Type Ground
+HP 120 150
+Speed 50 80
+Attack 60 90
+Defense 100 140
+Dig 0.3
+EndMonster
+
+Monster
+Name Charmander
+Type Fire
+HP 105 135
+Speed 85 115
+Attack 80 110
+Defense 55 85
+Burn 0.3
+EndMonster
+
+Monster
+Name Bulbasaur
+Type Plant
+HP 115 145
+Speed 70 100
+Attack 70 100
+Defense 75 105
+Heal 0.2
+EndMonster
+
+Monster
+Name Caterpie
+Type Insect
+HP 90 120
+Speed 60 90
+Attack 55 85
+Defense 60 90
+EndMonster
+
