@@ -23,10 +23,11 @@ public abstract class Monster {
     protected int defense;
     protected int speed;
     protected StatusCondition currentStatus;
+    protected int paralysisCounter; // Nombre de tours passés en paralysie
+    protected boolean hasUsedSpecialAbility; // Flag pour la récupération PV Nature
     protected List<Attack> attacks;
     
     /**
-     * Constructeur d'un monstre
      * @param name Nom du monstre
      * @param type Type du monstre
      * @param hp Points de vie (HP) du monstre
@@ -43,6 +44,8 @@ public abstract class Monster {
         this.attack = attack;
         this.defense = defense;
         this.currentStatus = StatusCondition.NONE;
+        this.paralysisCounter = 0;
+        this.hasUsedSpecialAbility = false;
         this.attacks = new ArrayList<>();
     }
     
@@ -155,6 +158,30 @@ public abstract class Monster {
     
     public void setCurrentStatus(StatusCondition status) {
         this.currentStatus = status;
+        // Réinitialiser le compteur si le statut change
+        if (status != StatusCondition.PARALYZED) {
+            this.paralysisCounter = 0;
+        }
+    }
+    
+    public int getParalysisCounter() {
+        return paralysisCounter;
+    }
+    
+    public void incrementParalysisCounter() {
+        this.paralysisCounter++;
+    }
+    
+    public void resetParalysisCounter() {
+        this.paralysisCounter = 0;
+    }
+    
+    public boolean hasUsedSpecialAbility() {
+        return hasUsedSpecialAbility;
+    }
+    
+    public void setHasUsedSpecialAbility(boolean hasUsedSpecialAbility) {
+        this.hasUsedSpecialAbility = hasUsedSpecialAbility;
     }
     
     public List<Attack> getAttacks() {

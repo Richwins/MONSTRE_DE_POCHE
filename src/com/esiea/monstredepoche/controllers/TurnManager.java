@@ -4,6 +4,8 @@ import com.esiea.monstredepoche.models.Attack;
 import com.esiea.monstredepoche.models.BattleField;
 import com.esiea.monstredepoche.models.Monster;
 import com.esiea.monstredepoche.models.Player;
+import com.esiea.monstredepoche.models.enums.AttackType;
+import com.esiea.monstredepoche.models.enums.MonsterType;
 import com.esiea.monstredepoche.services.DamageCalculator;
 import com.esiea.monstredepoche.services.StatusEffectManager;
 
@@ -63,12 +65,18 @@ public class TurnManager {
      * Puis applique les effets de statut et met à jour le terrain
      */
     public void executeActions() {
+        // Réinitialiser le flag d'utilisation de capacité spéciale pour tous les monstres
+        resetSpecialAbilityFlags();
+        
         // 1. Changements de monstres
         for (Action action : actions) {
             if (action.type == Action.ActionType.SWITCH_MONSTER) {
                 action.player.switchMonster(action.targetIndex);
             }
         }
+        
+        // Vérifier si le monstre qui a inondé est toujours actif
+        field.checkFloodSource();
         
         // 2. Utilisation d'objets
         for (Action action : actions) {
@@ -119,6 +127,11 @@ public class TurnManager {
             return;
         }
         
+        // Vérifier la glissade sur terrain inondé
+        if (checkSlip(attacker)) {
+            return; // L'attaque est annulée
+        }
+        
         // Trouver la cible (l'autre joueur)
         Player targetPlayer = (action.player == field.getPlayer1()) ? 
                               field.getPlayer2() : field.getPlayer1();
@@ -147,8 +160,11 @@ public class TurnManager {
                     System.out.println(attacker.getName() + " utilise " + attack.getName() + 
                                      " et inflige " + (int)damage + " dégâts à " + target.getName());
                     
-                    // Utiliser la capacité spéciale
-                    attacker.useSpecialAbility(field, target);
+                    // Utiliser la capacité spéciale uniquement si l'attaque est du même type que le monstre
+                    if (isSpecialAttack(attacker, attack)) {
+                        attacker.setHasUsedSpecialAbility(true);
+                        attacker.useSpecialAbility(field, target);
+                    }
                 } else {
                     System.out.println(attacker.getName() + " rate son attaque " + attack.getName() + " !");
                 }
@@ -171,8 +187,73 @@ public class TurnManager {
         System.out.println(attacker.getName() + " attaque à mains nues et inflige " + 
                           (int)damage + " dégâts à " + target.getName());
         
-        // Utiliser la capacité spéciale
-        attacker.useSpecialAbility(field, target);
+        // Les attaques à mains nues ne déclenchent PAS les capacités spéciales
+    }
+    
+    /**
+     * Vérifie si une attaque est une attaque spéciale (même type que le monstre)
+     * @param monster Le monstre attaquant
+     * @param attack L'attaque utilisée
+     * @return true si l'attaque est du même type que le monstre
+     */
+    private boolean isSpecialAttack(Monster monster, Attack attack) {
+        MonsterType monsterType = monster.getType();
+        AttackType attackType = attack.getType();
+        
+        // Correspondance entre types de monstre et types d'attaque
+        switch (monsterType) {
+            case FOUDRE:
+                return attackType == AttackType.ELECTRIC;
+            case EAU:
+                return attackType == AttackType.WATER;
+            case TERRE:
+                return attackType == AttackType.GROUND;
+            case FEU:
+                return attackType == AttackType.FIRE;
+            case NATURE:
+                return attackType == AttackType.NATURE;
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Vérifie si le monstre glisse sur le terrain inondé.
+     * Les monstres de type eau ne glissent jamais.
+     * En cas de glissade : l'attaque est annulée et le monstre subit 1/4 de sa propre attaque.
+     * @param attacker Le monstre attaquant
+     * @return true si le monstre a glissé (attaque annulée)
+     */
+    private boolean checkSlip(Monster attacker) {
+        // Vérifier si le terrain est inondé
+        if (!field.isFlooded()) {
+            return false;
+        }
+        
+        // Les monstres de type eau ne glissent pas
+        if (attacker.getType() == MonsterType.EAU) {
+            return false;
+        }
+        
+        // Récupérer la probabilité de glissade depuis le monstre d'eau qui a inondé
+        Monster floodSource = field.getFloodSource();
+        if (floodSource instanceof com.esiea.monstredepoche.models.monsters.WaterMonster) {
+            com.esiea.monstredepoche.models.monsters.WaterMonster waterMonster = 
+                (com.esiea.monstredepoche.models.monsters.WaterMonster) floodSource;
+            double fallChance = waterMonster.getFallChance();
+            
+            // Tester la probabilité de glissade
+            if (java.util.concurrent.ThreadLocalRandom.current().nextDouble() < fallChance) {
+                // Le monstre glisse !
+                int damage = attacker.getAttack() / 4; // 1/4 de sa propre attaque
+                attacker.takeDamage(damage);
+                System.out.println(attacker.getName() + " glisse sur le terrain inondé !");
+                System.out.println(attacker.getName() + " subit " + damage + " dégâts de chute !");
+                return true; // L'attaque est annulée
+            }
+        }
+        
+        return false; // Pas de glissade
     }
     
     private void applyStatusEffects() {
@@ -184,12 +265,22 @@ public class TurnManager {
             StatusEffectManager.applyBurnDamage(m1);
             StatusEffectManager.applyPoisonDamage(m1);
             StatusEffectManager.updateStatusDuration(m1);
+            
+            // Mettre à jour la durée d'enfouissement pour les monstres de terre
+            if (m1 instanceof com.esiea.monstredepoche.models.monsters.GroundMonster) {
+                ((com.esiea.monstredepoche.models.monsters.GroundMonster) m1).updateUndergroundDuration();
+            }
         }
         
         if (m2 != null && m2.isAlive()) {
             StatusEffectManager.applyBurnDamage(m2);
             StatusEffectManager.applyPoisonDamage(m2);
             StatusEffectManager.updateStatusDuration(m2);
+            
+            // Mettre à jour la durée d'enfouissement pour les monstres de terre
+            if (m2 instanceof com.esiea.monstredepoche.models.monsters.GroundMonster) {
+                ((com.esiea.monstredepoche.models.monsters.GroundMonster) m2).updateUndergroundDuration();
+            }
         }
         
         // Appliquer les effets du terrain
@@ -198,6 +289,18 @@ public class TurnManager {
     
     public void determineOrder() {
         // L'ordre est déterminé par la vitesse lors de l'exécution des attaques
+    }
+    
+    /**
+     * Réinitialise le flag d'utilisation de capacité spéciale pour tous les monstres
+     */
+    private void resetSpecialAbilityFlags() {
+        if (field.getPlayer1().getActiveMonster() != null) {
+            field.getPlayer1().getActiveMonster().setHasUsedSpecialAbility(false);
+        }
+        if (field.getPlayer2().getActiveMonster() != null) {
+            field.getPlayer2().getActiveMonster().setHasUsedSpecialAbility(false);
+        }
     }
 }
 

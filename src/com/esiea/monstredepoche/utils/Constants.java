@@ -1,5 +1,10 @@
 package com.esiea.monstredepoche.utils;
 
+/**
+ * Classe contenant toutes les constantes du jeu.
+ * Centralise les valeurs utilisées pour les calculs de dégâts,
+ * les probabilités et les multiplicateurs.
+ */
 public class Constants {
     public static final double BARE_DAMAGE_MULTIPLIER = 20.0;
     public static final double ATTACK_DAMAGE_BASE = 11.0;

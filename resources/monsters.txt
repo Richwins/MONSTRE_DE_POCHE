@@ -26,7 +26,7 @@ HP 120 150
 Speed 50 80
 Attack 60 90
 Defense 100 140
-Dig 0.3
+Dig 0.05
 EndMonster
 
 Monster
@@ -41,7 +41,7 @@ EndMonster
 
 Monster
 Name Bulbasaur
-Type Nature
+Type Plante
 HP 115 145
 Speed 70 100
 Attack 70 100
@@ -51,11 +51,10 @@ EndMonster
 
 Monster
 Name Caterpie
-Type Nature
+Type Insecte
 HP 90 120
 Speed 60 90
 Attack 55 85
 Defense 60 90
-Heal 0.2
 EndMonster
 

@@ -10,8 +10,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Chargeur d'attaques depuis un fichier texte.
+ * Parse le fichier attacks.txt et crée les instances d'attaques.
+ */
 public class AttackLoader {
     
+    /**
+     * Parse un fichier d'attaques et retourne la liste des attaques créées
+     * @param filePath Chemin vers le fichier attacks.txt
+     * @return Liste des attaques chargées
+     * @throws IOException Si une erreur survient lors de la lecture du fichier
+     */
     public static List<Attack> parseAttackFile(String filePath) throws IOException {
         List<Attack> attacks = new ArrayList<>();
         

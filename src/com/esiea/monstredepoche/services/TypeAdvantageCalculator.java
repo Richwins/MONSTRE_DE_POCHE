@@ -59,6 +59,16 @@ public class TypeAdvantageCalculator {
             }
         }
         
+        // Nature est fort contre Terre, faible contre Feu
+        if (attacker == MonsterType.NATURE) {
+            if (defender == MonsterType.TERRE) {
+                return Constants.TYPE_ADVANTAGE_MULTIPLIER;
+            }
+            if (defender == MonsterType.FEU) {
+                return Constants.TYPE_DISADVANTAGE_MULTIPLIER;
+            }
+        }
+        
         // Pas d'avantage/désavantage
         return 1.0;
     }
