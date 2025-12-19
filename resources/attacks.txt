@@ -1,80 +1,80 @@
 Attack
-Name Eclair
-Type Electric
-Power 40
-NbUse 10
-Fail 0.07
+    Name Eclair
+    Type Electric
+    Power 40
+    NbUse 10
+    Fail 0.07
 EndAttack
 
 Attack
-Name Tonnerre
-Type Electric
-Power 90
-NbUse 5
-Fail 0.15
+    Name Tonnerre
+    Type Electric
+    Power 90
+    NbUse 5
+    Fail 0.15
 EndAttack
 
 Attack
-Name Hydrocanon
-Type Water
-Power 80
-NbUse 5
-Fail 0.1
+    Name Hydrocanon
+    Type Water
+    Power 80
+    NbUse 5
+    Fail 0.1
 EndAttack
 
 Attack
-Name Bulle d'O
-Type Water
-Power 30
-NbUse 15
-Fail 0.05
+    Name Bulle d'O
+    Type Water
+    Power 30
+    NbUse 15
+    Fail 0.05
 EndAttack
 
 Attack
-Name Seisme
-Type Ground
-Power 100
-NbUse 3
-Fail 0.2
+    Name Seisme
+    Type Ground
+    Power 100
+    NbUse 3
+    Fail 0.2
 EndAttack
 
 Attack
-Name Jet de Sable
-Type Ground
-Power 25
-NbUse 20
-Fail 0.05
+    Name Jet de Sable
+    Type Ground
+    Power 25
+    NbUse 20
+    Fail 0.05
 EndAttack
 
 Attack
-Name Lance-Flamme
-Type Fire
-Power 85
-NbUse 5
-Fail 0.1
+    Name Lance-Flamme
+    Type Fire
+    Power 85
+    NbUse 5
+    Fail 0.1
 EndAttack
 
 Attack
-Name Flammeche
-Type Fire
-Power 35
-NbUse 15
-Fail 0.05
+    Name Flammeche
+    Type Fire
+    Power 35
+    NbUse 15
+    Fail 0.05
 EndAttack
 
 Attack
-Name Fouet Lianes
-Type Nature
-Power 30
-NbUse 20
-Fail 0.05
+    Name Fouet Lianes
+    Type Nature
+    Power 30
+    NbUse 20
+    Fail 0.05
 EndAttack
 
 Attack
-Name Morsure
-Type Normal
-Power 25
-NbUse 20
-Fail 0.05
+    Name Morsure
+    Type Normal
+    Power 25
+    NbUse 20
+    Fail 0.05
 EndAttack
 

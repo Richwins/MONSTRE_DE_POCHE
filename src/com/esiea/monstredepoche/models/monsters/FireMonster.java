@@ -10,7 +10,7 @@ public class FireMonster extends Monster {
     private double burnChance;
     
     public FireMonster(String name, int hp, int speed, int attack, int defense, double burnChance) {
-        super(name, MonsterType.FIRE, hp, speed, attack, defense);
+        super(name, MonsterType.FEU, hp, speed, attack, defense);
         this.burnChance = burnChance;
     }
     

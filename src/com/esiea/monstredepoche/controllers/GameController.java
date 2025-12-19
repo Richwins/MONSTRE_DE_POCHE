@@ -3,6 +3,8 @@ package com.esiea.monstredepoche.controllers;
 import com.esiea.monstredepoche.loaders.AttackLoader;
 import com.esiea.monstredepoche.loaders.MonsterLoader;
 import com.esiea.monstredepoche.models.*;
+import com.esiea.monstredepoche.models.enums.AttackType;
+import com.esiea.monstredepoche.models.enums.MonsterType;
 import com.esiea.monstredepoche.models.items.Medicine;
 import com.esiea.monstredepoche.models.items.Potion;
 
@@ -11,6 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Contrôleur principal du jeu.
+ * Gère le flux global : initialisation, configuration des joueurs,
+ * chargement des données, et orchestration des tours de combat.
+ */
 public class GameController {
     private Scanner scanner;
     private List<Monster> availableMonsters;
@@ -133,6 +140,9 @@ public class GameController {
                 break;
             }
             
+            // Afficher l'état du jeu avant le tour
+            displayGameState();
+            
             // Tour du joueur 1
             processPlayerTurn(battleController.getField().getPlayer1());
             
@@ -151,6 +161,87 @@ public class GameController {
         }
         
         endGame();
+    }
+    
+    private void displayGameState() {
+        BattleField field = battleController.getField();
+        Player player1 = field.getPlayer1();
+        Player player2 = field.getPlayer2();
+        
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("                    ÉTAT DU COMBAT");
+        System.out.println("=".repeat(60));
+        
+        // État du terrain
+        System.out.println("\n🌍 TERRAIN : " + getTerrainStatusString(field));
+        
+        // État du joueur 1
+        System.out.println("\n" + "-".repeat(60));
+        System.out.println("👤 " + player1.getName().toUpperCase());
+        System.out.println("-".repeat(60));
+        displayPlayerMonsters(player1);
+        
+        // État du joueur 2
+        System.out.println("\n" + "-".repeat(60));
+        System.out.println("👤 " + player2.getName().toUpperCase());
+        System.out.println("-".repeat(60));
+        displayPlayerMonsters(player2);
+        
+        System.out.println("\n" + "=".repeat(60) + "\n");
+    }
+    
+    private void displayPlayerMonsters(Player player) {
+        for (int i = 0; i < player.getMonsters().size(); i++) {
+            Monster monster = player.getMonsters().get(i);
+            boolean isActive = monster == player.getActiveMonster();
+            String status = isActive ? "⚡ ACTIF" : "   ";
+            
+            // Barre de vie
+            int barLength = 20;
+            int hpPercent = 0;
+            if (monster.getMaxHp() > 0) {
+                hpPercent = (int) ((double) monster.getHp() / monster.getMaxHp() * barLength);
+            }
+            String hpBar = "█".repeat(Math.max(0, hpPercent)) + 
+                          "░".repeat(Math.max(0, barLength - hpPercent));
+            
+            // État d'altération
+            String statusCondition = getStatusConditionString(monster);
+            
+            System.out.printf("%s [%d] %s\n", status, i + 1, monster.getName());
+            if (monster.isAlive()) {
+                System.out.printf("     Points de vie: %s [%d/%d] %s\n", hpBar, monster.getHp(), monster.getMaxHp(), statusCondition);
+                System.out.printf("     Type: %s | Attaque: %d | Défense: %d | Vitesse: %d\n", 
+                                monster.getType(), monster.getAttack(), monster.getDefense(), monster.getSpeed());
+            } else {
+                System.out.println("     ❌ KO (0/" + monster.getMaxHp() + " Points de vie)");
+            }
+        }
+    }
+    
+    private String getTerrainStatusString(BattleField field) {
+        if (field.isFlooded()) {
+            return "💧 INONDÉ (durée restante: " + getFloodDuration(field) + " tours)";
+        } else {
+            return "🌍 NORMAL";
+        }
+    }
+    
+    private int getFloodDuration(BattleField field) {
+        return field.getFloodDuration();
+    }
+    
+    private String getStatusConditionString(Monster monster) {
+        switch (monster.getCurrentStatus()) {
+            case PARALYZED:
+                return "⚡ PARALYSÉ";
+            case BURNED:
+                return "🔥 BRÛLÉ";
+            case POISONED:
+                return "☠️ EMPOISONNÉ";
+            default:
+                return "";
+        }
     }
     
     private void processPlayerTurn(Player player) {
@@ -196,18 +287,84 @@ public class GameController {
     
     private void selectAttack(Player player, TurnManager.Action action) {
         Monster monster = player.getActiveMonster();
-        System.out.println("\nAttaques disponibles :");
-        for (int i = 0; i < monster.getAttacks().size(); i++) {
-            Attack attack = monster.getAttacks().get(i);
+        
+        // Récupérer les attaques spéciales (du type du monstre)
+        List<Attack> specialAttacks = new ArrayList<>();
+        AttackType monsterAttackType = convertMonsterTypeToAttackType(monster.getType());
+        
+        for (Attack attack : monster.getAttacks()) {
+            if (attack.getType() == monsterAttackType) {
+                specialAttacks.add(attack);
+            }
+        }
+        
+        // Vérifier s'il y a des attaques spéciales disponibles
+        boolean hasSpecialAttack = specialAttacks.stream().anyMatch(Attack::canUse);
+        
+        // Menu de sélection du type d'attaque
+        System.out.println("\nType d'attaque :");
+        System.out.println("1. Attaque normale (mains nues)");
+        if (hasSpecialAttack) {
+            System.out.println("2. Attaque spéciale (" + monster.getType() + ")");
+        }
+        
+        System.out.print("Votre choix : ");
+        try {
+            int typeChoice = Integer.parseInt(scanner.nextLine());
+            
+            if (typeChoice == 1) {
+                // Attaque normale (mains nues) - dégâts de base
+                action.attackIndex = -1;
+            } else if (typeChoice == 2 && hasSpecialAttack) {
+                // Afficher les attaques spéciales disponibles
+                action.attackIndex = selectSpecificAttack(specialAttacks, monster.getAttacks());
+            } else {
+                // Par défaut, attaque normale (mains nues)
+                action.attackIndex = -1;
+            }
+        } catch (NumberFormatException e) {
+            // Par défaut, attaque normale (mains nues)
+            action.attackIndex = -1;
+        }
+    }
+    
+    private int selectSpecificAttack(List<Attack> availableAttacks, List<Attack> allAttacks) {
+        System.out.println("\nAttaques spéciales disponibles :");
+        for (int i = 0; i < availableAttacks.size(); i++) {
+            Attack attack = availableAttacks.get(i);
+            String status = attack.canUse() ? "" : " (Épuisée)";
             System.out.println((i + 1) + ". " + attack.getName() + 
                              " (Puissance: " + attack.getPower() + 
-                             ", Utilisations: " + attack.getNbUse() + "/" + attack.getMaxUses() + ")");
+                             ", Utilisations: " + attack.getNbUse() + "/" + attack.getMaxUses() + ")" + status);
         }
         System.out.print("Choisissez une attaque : ");
         try {
-            action.attackIndex = Integer.parseInt(scanner.nextLine()) - 1;
+            int choice = Integer.parseInt(scanner.nextLine()) - 1;
+            if (choice >= 0 && choice < availableAttacks.size()) {
+                Attack selected = availableAttacks.get(choice);
+                // Retourner l'index dans la liste complète des attaques
+                return allAttacks.indexOf(selected);
+            }
         } catch (NumberFormatException e) {
-            action.attackIndex = 0;
+            // Ignorer
+        }
+        return 0;
+    }
+    
+    private AttackType convertMonsterTypeToAttackType(MonsterType monsterType) {
+        switch (monsterType) {
+            case FOUDRE:
+                return AttackType.ELECTRIC;
+            case EAU:
+                return AttackType.WATER;
+            case TERRE:
+                return AttackType.GROUND;
+            case FEU:
+                return AttackType.FIRE;
+            case NATURE:
+                return AttackType.NATURE;
+            default:
+                return AttackType.NORMAL;
         }
     }
     

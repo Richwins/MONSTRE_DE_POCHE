@@ -3,6 +3,11 @@ package com.esiea.monstredepoche.models;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Représente un joueur dans le jeu.
+ * Un joueur possède une équipe de monstres (maximum 3), des objets,
+ * et un monstre actif qui combat sur le terrain.
+ */
 public class Player {
     private String name;
     private List<Monster> monsters;
@@ -16,6 +21,11 @@ public class Player {
         this.activeMonster = null;
     }
     
+    /**
+     * Change le monstre actif
+     * @param index L'index du monstre à activer
+     * @return true si le changement a réussi, false sinon
+     */
     public boolean switchMonster(int index) {
         if (index < 0 || index >= monsters.size()) {
             return false;
@@ -30,6 +40,12 @@ public class Player {
         return true;
     }
     
+    /**
+     * Utilise un objet sur un monstre cible
+     * @param itemIndex L'index de l'objet à utiliser
+     * @param target Le monstre cible
+     * @return true si l'objet a été utilisé avec succès
+     */
     public boolean useItem(int itemIndex, Monster target) {
         if (itemIndex < 0 || itemIndex >= items.size()) {
             return false;
@@ -45,6 +61,10 @@ public class Player {
         return used;
     }
     
+    /**
+     * Vérifie si le joueur a perdu (tous ses monstres sont KO)
+     * @return true si tous les monstres sont KO
+     */
     public boolean hasLost() {
         for (Monster monster : monsters) {
             if (monster.isAlive()) {
@@ -54,6 +74,10 @@ public class Player {
         return true;
     }
     
+    /**
+     * Retourne la liste des monstres disponibles (vivants et non actifs)
+     * @return Liste des monstres disponibles pour le changement
+     */
     public List<Monster> getAvailableMonsters() {
         List<Monster> available = new ArrayList<>();
         for (Monster monster : monsters) {

@@ -7,11 +7,17 @@ import com.esiea.monstredepoche.models.enums.MonsterType;
 import com.esiea.monstredepoche.utils.Constants;
 import com.esiea.monstredepoche.utils.RandomGenerator;
 
+/**
+ * Service de calcul des dégâts.
+ * Contient les formules de calcul pour les attaques à mains nues
+ * et les attaques spéciales, en tenant compte des avantages de type.
+ */
 public class DamageCalculator {
     
     /**
-     * Calcule les dégâts d'une attaque basique
-     * Formule : Dégâts = 20 × (attaque / défense adverse) × coef × avantage
+     * Calcule les dégâts d'une attaque à mains nues
+     * Formule : dégâts = (20 × attaque × coef) / défense adverse
+     * Puis multiplié par l'avantage de type
      */
     public static double calculateBareDamage(Monster attacker, Monster defender) {
         double coefficient = RandomGenerator.randomDouble(
@@ -23,9 +29,8 @@ public class DamageCalculator {
             defender.getType()
         );
         
-        return Constants.BARE_DAMAGE_MULTIPLIER * 
-               (attacker.getAttack() / defender.getDefense()) * 
-               coefficient * 
+        return (Constants.BARE_DAMAGE_MULTIPLIER * attacker.getAttack() * coefficient) / 
+               defender.getDefense() * 
                advantage;
     }
     
@@ -41,19 +46,19 @@ public class DamageCalculator {
         
         // Calcul de l'avantage de type basé sur le type de l'attaque
         double advantage = 1.0;
-        if (attack.getType() == AttackType.ELECTRIC && defender.getType() == MonsterType.WATER) {
+        if (attack.getType() == AttackType.ELECTRIC && defender.getType() == MonsterType.EAU) {
             advantage = Constants.TYPE_ADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.ELECTRIC && defender.getType() == MonsterType.GROUND) {
+        } else if (attack.getType() == AttackType.ELECTRIC && defender.getType() == MonsterType.TERRE) {
             advantage = Constants.TYPE_DISADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.WATER && defender.getType() == MonsterType.FIRE) {
+        } else if (attack.getType() == AttackType.WATER && defender.getType() == MonsterType.FEU) {
             advantage = Constants.TYPE_ADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.WATER && defender.getType() == MonsterType.ELECTRIC) {
+        } else if (attack.getType() == AttackType.WATER && defender.getType() == MonsterType.FOUDRE) {
             advantage = Constants.TYPE_DISADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.GROUND && defender.getType() == MonsterType.ELECTRIC) {
+        } else if (attack.getType() == AttackType.GROUND && defender.getType() == MonsterType.FOUDRE) {
             advantage = Constants.TYPE_ADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.FIRE && (defender.getType() == MonsterType.PLANT || defender.getType() == MonsterType.INSECT)) {
+        } else if (attack.getType() == AttackType.FIRE && defender.getType() == MonsterType.NATURE) {
             advantage = Constants.TYPE_ADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.FIRE && defender.getType() == MonsterType.WATER) {
+        } else if (attack.getType() == AttackType.FIRE && defender.getType() == MonsterType.EAU) {
             advantage = Constants.TYPE_DISADVANTAGE_MULTIPLIER;
         }
         

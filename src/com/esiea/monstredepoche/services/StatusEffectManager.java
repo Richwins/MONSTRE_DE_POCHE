@@ -4,6 +4,13 @@ import com.esiea.monstredepoche.models.Monster;
 import com.esiea.monstredepoche.models.enums.StatusCondition;
 import com.esiea.monstredepoche.utils.Constants;
 
+/**
+ * Service de gestion des altérations d'état.
+ * Gère l'application, la résolution et les dégâts des états :
+ * - Paralysie : 25% de chance de rater une attaque
+ * - Brûlure : 10% de l'attaque en dégâts par tour
+ * - Empoisonnement : 10% de l'attaque en dégâts par tour
+ */
 public class StatusEffectManager {
     
     public static void applyBurn(Monster monster) {

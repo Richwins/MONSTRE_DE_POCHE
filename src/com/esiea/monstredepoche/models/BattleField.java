@@ -4,6 +4,11 @@ import com.esiea.monstredepoche.models.enums.MonsterType;
 import com.esiea.monstredepoche.models.enums.StatusCondition;
 import com.esiea.monstredepoche.models.enums.TerrainStatus;
 
+/**
+ * Représente le terrain de combat.
+ * Gère l'état du terrain (normal ou inondé) et applique les effets
+ * du terrain sur les monstres (soins pour Nature, guérison des brûlures/empoisonnements).
+ */
 public class BattleField {
     private TerrainStatus terrainStatus;
     private int floodDuration;
@@ -17,20 +22,22 @@ public class BattleField {
         this.floodDuration = 0;
     }
     
+    /**
+     * Applique les effets du terrain sur les monstres actifs.
+     * En cas d'inondation : soigne les monstres Nature et guérit brûlures/empoisonnements.
+     */
     public void applyTerrainEffects() {
         if (terrainStatus == TerrainStatus.FLOODED) {
-            // Les monstres de type Plant et Insect récupèrent des PV
+            // Les monstres de type Nature récupèrent des PV
             if (player1.getActiveMonster() != null) {
                 Monster m1 = player1.getActiveMonster();
-                if (m1.getType() == MonsterType.PLANT || 
-                    m1.getType() == MonsterType.INSECT) {
+                if (m1.getType() == MonsterType.NATURE) {
                     m1.heal(5);
                 }
             }
             if (player2.getActiveMonster() != null) {
                 Monster m2 = player2.getActiveMonster();
-                if (m2.getType() == MonsterType.PLANT || 
-                    m2.getType() == MonsterType.INSECT) {
+                if (m2.getType() == MonsterType.NATURE) {
                     m2.heal(5);
                 }
             }
@@ -53,6 +60,9 @@ public class BattleField {
         }
     }
     
+    /**
+     * Met à jour l'état du terrain (réduit la durée d'inondation si applicable)
+     */
     public void updateTerrain() {
         if (terrainStatus == TerrainStatus.FLOODED) {
             floodDuration--;
@@ -62,11 +72,18 @@ public class BattleField {
         }
     }
     
+    /**
+     * Inonde le terrain pour une durée donnée
+     * @param duration Nombre de tours d'inondation
+     */
     public void setFlooded(int duration) {
         this.terrainStatus = TerrainStatus.FLOODED;
         this.floodDuration = duration;
     }
     
+    /**
+     * Remet le terrain à l'état normal
+     */
     public void setNormal() {
         this.terrainStatus = TerrainStatus.NORMAL;
         this.floodDuration = 0;
@@ -87,6 +104,10 @@ public class BattleField {
     
     public boolean isFlooded() {
         return terrainStatus == TerrainStatus.FLOODED;
+    }
+    
+    public int getFloodDuration() {
+        return floodDuration;
     }
 }
 

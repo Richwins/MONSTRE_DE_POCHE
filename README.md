@@ -1,5 +1,6 @@
 # Monstre de Poche - Jeu de Combat en Tour par Tour
-###Etudiant : SESSOU Winsou Richard 
+
+### Etudiant : SESSOU Winsou Richard 
 
 ## Description
 Jeu de combat inspiré de Pokémon où deux joueurs s'affrontent avec leurs équipes de monstres. Chaque monstre possède un type élémentaire avec des forces et faiblesses, des attaques spéciales et des capacités uniques.
@@ -114,7 +115,7 @@ Contient toutes les entités du jeu.
 - Méthodes : applyTerrainEffects(), updateTerrain()
 
 **enums/**
-- MonsterType : ELECTRIC, WATER, GROUND, FIRE, PLANT, INSECT
+- MonsterType : FOUDRE, EAU, TERRE, FEU, PLANTE, INSECTE
 - AttackType : NORMAL, ELECTRIC, WATER, GROUND, FIRE, NATURE
 - StatusCondition : NONE, PARALYZED, BURNED, POISONED
 - TerrainStatus : NORMAL, FLOODED

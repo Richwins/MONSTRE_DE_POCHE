@@ -10,7 +10,7 @@ public class ElectricMonster extends Monster {
     private double paralysisChance;
     
     public ElectricMonster(String name, int hp, int speed, int attack, int defense, double paralysisChance) {
-        super(name, MonsterType.ELECTRIC, hp, speed, attack, defense);
+        super(name, MonsterType.FOUDRE, hp, speed, attack, defense);
         this.paralysisChance = paralysisChance;
     }
     

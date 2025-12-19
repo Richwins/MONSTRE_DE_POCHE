@@ -11,8 +11,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Chargeur de monstres depuis un fichier texte.
+ * Parse le fichier monsters.txt et crée les instances de monstres
+ * selon leur type (ElectricMonster, WaterMonster, etc.)
+ */
 public class MonsterLoader {
     
+    /**
+     * Parse un fichier de monstres et retourne la liste des monstres créés
+     * @param filePath Chemin vers le fichier monsters.txt
+     * @return Liste des monstres chargés
+     * @throws IOException Si une erreur survient lors de la lecture du fichier
+     */
     public static List<Monster> parseMonsterFile(String filePath) throws IOException {
         List<Monster> monsters = new ArrayList<>();
         
@@ -46,7 +57,7 @@ public class MonsterLoader {
     private static Monster createMonster(Map<String, String> data) {
         String name = data.get("Name");
         String typeStr = data.get("Type");
-        MonsterType type = MonsterType.valueOf(typeStr.toUpperCase());
+        MonsterType type = parseMonsterType(typeStr);
         
         int[] hpRange = DataParser.parseRange(data.get("HP"));
         int[] speedRange = DataParser.parseRange(data.get("Speed"));
@@ -59,32 +70,56 @@ public class MonsterLoader {
         int defense = DataParser.randomInRange(defenseRange[0], defenseRange[1]);
         
         switch (type) {
-            case ELECTRIC:
+            case FOUDRE:
                 double paralysis = Double.parseDouble(data.getOrDefault("Paralysis", "0.2"));
                 return new ElectricMonster(name, hp, speed, attack, defense, paralysis);
                 
-            case WATER:
+            case EAU:
                 double floodChance = Double.parseDouble(data.getOrDefault("Flood", "0.3"));
                 double fallChance = Double.parseDouble(data.getOrDefault("Fall", "0.2"));
                 return new WaterMonster(name, hp, speed, attack, defense, floodChance, fallChance);
                 
-            case GROUND:
+            case TERRE:
                 double digChance = Double.parseDouble(data.getOrDefault("Dig", "0.3"));
                 return new GroundMonster(name, hp, speed, attack, defense, digChance);
                 
-            case FIRE:
+            case FEU:
                 double burnChance = Double.parseDouble(data.getOrDefault("Burn", "0.3"));
                 return new FireMonster(name, hp, speed, attack, defense, burnChance);
                 
-            case PLANT:
+            case NATURE:
                 double healChance = Double.parseDouble(data.getOrDefault("Heal", "0.2"));
-                return new PlantMonster(name, hp, speed, attack, defense, healChance);
-                
-            case INSECT:
-                return new InsectMonster(name, hp, speed, attack, defense);
+                return new NatureMonster(name, hp, speed, attack, defense, healChance);
                 
             default:
                 return null;
+        }
+    }
+    
+    private static MonsterType parseMonsterType(String typeStr) {
+        // Convertir les types français en enum
+        String normalized = typeStr.trim().toUpperCase();
+        switch (normalized) {
+            case "FOUDRE":
+            case "ELECTRIC":
+                return MonsterType.FOUDRE;
+            case "EAU":
+            case "WATER":
+                return MonsterType.EAU;
+            case "TERRE":
+            case "GROUND":
+                return MonsterType.TERRE;
+            case "FEU":
+            case "FIRE":
+                return MonsterType.FEU;
+            case "NATURE":
+            case "PLANTE":
+            case "PLANT":
+            case "INSECTE":
+            case "INSECT":
+                return MonsterType.NATURE;
+            default:
+                throw new IllegalArgumentException("Type de monstre inconnu: " + typeStr);
         }
     }
 }

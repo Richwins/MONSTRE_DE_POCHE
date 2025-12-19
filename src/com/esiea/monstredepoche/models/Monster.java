@@ -8,6 +8,12 @@ import com.esiea.monstredepoche.services.TypeAdvantageCalculator;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Classe abstraite représentant un monstre dans le jeu.
+ * Chaque monstre possède des statistiques (HP, attaque, défense, vitesse),
+ * un type élémentaire, des attaques et peut subir des altérations d'état.
+ * Les classes concrètes implémentent la capacité spéciale unique à chaque type.
+ */
 public abstract class Monster {
     protected String name;
     protected MonsterType type;
@@ -19,6 +25,15 @@ public abstract class Monster {
     protected StatusCondition currentStatus;
     protected List<Attack> attacks;
     
+    /**
+     * Constructeur d'un monstre
+     * @param name Nom du monstre
+     * @param type Type du monstre
+     * @param hp Points de vie (HP) du monstre
+     * @param speed Vitesse du monstre
+     * @param attack Attaque du monstre
+     * @param defense Défense du monstre
+     */
     public Monster(String name, MonsterType type, int hp, int speed, int attack, int defense) {
         this.name = name;
         this.type = type;
@@ -31,31 +46,64 @@ public abstract class Monster {
         this.attacks = new ArrayList<>();
     }
     
+    /**
+     * Inflige des dégâts au monstre (réduit les points de vie)
+     * @param damage Montant des dégâts à infliger
+     */
     public void takeDamage(int damage) {
         hp = Math.max(0, hp - damage);
     }
     
+    /**
+     * Soigne le monstre (augmente les points de vie)
+     * @param amount Montant de points de vie à restaurer
+     */
     public void heal(int amount) {
         hp = Math.min(maxHp, hp + amount);
     }
     
+    /**
+     * Ajoute une attaque au monstre (maximum 4 attaques)
+     * @param attack L'attaque à ajouter
+     */
     public void addAttack(Attack attack) {
-        attacks.add(attack);
+        if (attacks.size() < 4) {
+            attacks.add(attack);
+        }
     }
     
+    /**
+     * Vérifie si le monstre est encore en vie
+     * @return true si les points de vie sont supérieurs à 0
+     */
     public boolean isAlive() {
         return hp > 0;
     }
     
+    /**
+     * Calcule l'avantage de type contre un adversaire
+     * @param opponent Le monstre adverse
+     * @return Le multiplicateur d'avantage (2.0 si fort, 0.5 si faible, 1.0 sinon)
+     */
     public double getTypeAdvantage(Monster opponent) {
         return TypeAdvantageCalculator.getAdvantageMultiplier(this.type, opponent.getType());
     }
     
+    /**
+     * Calcule les dégâts d'une attaque à mains nues
+     * @param target Le monstre cible
+     * @return Les dégâts calculés
+     */
     public double calculateBareDamage(Monster target) {
         return DamageCalculator.calculateBareDamage(this, target);
     }
     
-    // Méthodes abstraites
+    /**
+     * Méthode abstraite pour utiliser la capacité spéciale du monstre.
+     * Chaque type de monstre a une capacité unique (paralysie, inondation, etc.)
+     * @param field Le terrain de combat
+     * @param opponent Le monstre adverse
+     */
     public abstract void useSpecialAbility(BattleField field, Monster opponent);
     
     // Getters et Setters
@@ -67,10 +115,16 @@ public abstract class Monster {
         return type;
     }
     
+    /**
+     * @return Les points de vie actuels du monstre (HP)
+     */
     public int getHp() {
         return hp;
     }
     
+    /**
+     * @return Les points de vie maximum du monstre (HP max)
+     */
     public int getMaxHp() {
         return maxHp;
     }
@@ -109,7 +163,7 @@ public abstract class Monster {
     
     @Override
     public String toString() {
-        return name + " (HP: " + hp + "/" + maxHp + ", Type: " + type + ")";
+        return name + " (Points de vie: " + hp + "/" + maxHp + ", Type: " + type + ")";
     }
 }
 

@@ -1,15 +1,25 @@
 package com.esiea.monstredepoche.controllers;
 
+import com.esiea.monstredepoche.models.Attack;
 import com.esiea.monstredepoche.models.BattleField;
 import com.esiea.monstredepoche.models.Monster;
 import com.esiea.monstredepoche.models.Player;
+import com.esiea.monstredepoche.services.DamageCalculator;
 import com.esiea.monstredepoche.services.StatusEffectManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Gestionnaire de tours de combat.
+ * Gère l'ordre d'exécution des actions (changement de monstre, objets, attaques)
+ * et applique les effets de statut et du terrain.
+ */
 public class TurnManager {
     
+    /**
+     * Classe interne représentant une action d'un joueur
+     */
     public static class Action {
         public enum ActionType {
             SWITCH_MONSTER,
@@ -37,10 +47,21 @@ public class TurnManager {
         this.actions = new ArrayList<>();
     }
     
+    /**
+     * Ajoute une action à la file d'exécution
+     * @param action L'action à ajouter
+     */
     public void addAction(Action action) {
         actions.add(action);
     }
     
+    /**
+     * Exécute toutes les actions dans l'ordre :
+     * 1. Changements de monstres
+     * 2. Utilisation d'objets
+     * 3. Attaques (triées par vitesse)
+     * Puis applique les effets de statut et met à jour le terrain
+     */
     public void executeActions() {
         // 1. Changements de monstres
         for (Action action : actions) {
@@ -107,8 +128,17 @@ public class TurnManager {
             return;
         }
         
+        // Vérifier si une attaque est disponible
+        boolean hasAvailableAttack = false;
+        for (Attack a : attacker.getAttacks()) {
+            if (a.canUse()) {
+                hasAvailableAttack = true;
+                break;
+            }
+        }
+        
         if (action.attackIndex >= 0 && action.attackIndex < attacker.getAttacks().size()) {
-            com.esiea.monstredepoche.models.Attack attack = attacker.getAttacks().get(action.attackIndex);
+            Attack attack = attacker.getAttacks().get(action.attackIndex);
             
             if (attack.canUse()) {
                 if (attack.use()) {
@@ -124,8 +154,25 @@ public class TurnManager {
                 }
             } else {
                 System.out.println(attack.getName() + " n'a plus d'utilisations !");
+                // Attaque à mains nues si aucune attaque disponible
+                if (!hasAvailableAttack) {
+                    performBareHandAttack(attacker, target);
+                }
             }
+        } else if (action.attackIndex == -1) {
+            // Attaque normale (mains nues) - dégâts de base
+            performBareHandAttack(attacker, target);
         }
+    }
+    
+    private void performBareHandAttack(Monster attacker, Monster target) {
+        double damage = DamageCalculator.calculateBareDamage(attacker, target);
+        target.takeDamage((int) damage);
+        System.out.println(attacker.getName() + " attaque à mains nues et inflige " + 
+                          (int)damage + " dégâts à " + target.getName());
+        
+        // Utiliser la capacité spéciale
+        attacker.useSpecialAbility(field, target);
     }
     
     private void applyStatusEffects() {

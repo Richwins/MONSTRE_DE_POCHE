@@ -10,7 +10,7 @@ public class GroundMonster extends Monster {
     private boolean isUnderground;
     
     public GroundMonster(String name, int hp, int speed, int attack, int defense, double digChance) {
-        super(name, MonsterType.GROUND, hp, speed, attack, defense);
+        super(name, MonsterType.TERRE, hp, speed, attack, defense);
         this.digChance = digChance;
         this.isUnderground = false;
     }
