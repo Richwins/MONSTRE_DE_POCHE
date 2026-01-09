@@ -18,7 +18,7 @@ public class FireMonster extends Monster {
      * @param burnChance Probabilité de brûler l'adversaire
      */
     public FireMonster(String name, int hp, int speed, int attack, int defense, double burnChance) {
-        super(name, MonsterType.FEU, hp, speed, attack, defense);
+        super(name, MonsterType.FIRE, hp, speed, attack, defense);
         this.burnChance = burnChance;
     }
     

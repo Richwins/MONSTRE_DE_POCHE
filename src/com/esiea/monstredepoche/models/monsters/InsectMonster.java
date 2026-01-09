@@ -6,18 +6,24 @@ import com.esiea.monstredepoche.models.enums.MonsterType;
 import com.esiea.monstredepoche.services.StatusEffectManager;
 
 /**
- * Monstre de type Insecte (sous-type de Nature).
- * Capacité spéciale : empoisonne l'adversaire de façon garantie 1 attaque sur 3.
- * Bénéficie aussi de la récupération 1/20 PV sur terrain inondé (capacité Nature).
+ * Monstre de type Insecte (sous-type de la catégorie Nature).
+ * Hérite de NatureMonster pour bénéficier de la récupération de PV sur terrain inondé.
+ * 
+ * Capacité spéciale spécifique : empoisonne l'adversaire de façon garantie 1 attaque sur 3.
  */
-public class InsectMonster extends Monster {
+public class InsectMonster extends NatureMonster {
     private int poisonCounter;
     
     /**
-     * Constructeur d'un monstre insecte
+     * Constructeur d'un monstre de type Insecte.
+     * @param name    Le nom du monstre
+     * @param hp      Les points de vie du monstre
+     * @param speed   La vitesse du monstre
+     * @param attack  L'attaque du monstre
+     * @param defense La défense du monstre
      */
     public InsectMonster(String name, int hp, int speed, int attack, int defense) {
-        super(name, MonsterType.NATURE, hp, speed, attack, defense);
+        super(name, MonsterType.INSECT, hp, speed, attack, defense);
         this.poisonCounter = 0;
     }
     

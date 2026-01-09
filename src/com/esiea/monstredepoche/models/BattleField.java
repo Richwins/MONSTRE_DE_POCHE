@@ -32,11 +32,11 @@ public class BattleField {
      */
     public void applyTerrainEffects() {
         if (terrainStatus == TerrainStatus.FLOODED) {
-            // Les monstres de type Nature récupèrent 1/20 de leurs PV max
+            // Les monstres de type Nature (Plante ou Insecte) récupèrent 1/20 de leurs PV max
             // SEULEMENT s'ils ont utilisé une attaque spéciale ce tour
             if (player1.getActiveMonster() != null) {
                 Monster m1 = player1.getActiveMonster();
-                if (m1.getType() == MonsterType.NATURE && m1.isAlive() && m1.hasUsedSpecialAbility()) {
+                if (MonsterType.isNatureType(m1.getType()) && m1.isAlive() && m1.hasUsedSpecialAbility()) {
                     int healAmount = m1.getMaxHp() / 20;
                     if (healAmount > 0) {
                         m1.heal(healAmount);
@@ -46,7 +46,7 @@ public class BattleField {
             }
             if (player2.getActiveMonster() != null) {
                 Monster m2 = player2.getActiveMonster();
-                if (m2.getType() == MonsterType.NATURE && m2.isAlive() && m2.hasUsedSpecialAbility()) {
+                if (MonsterType.isNatureType(m2.getType()) && m2.isAlive() && m2.hasUsedSpecialAbility()) {
                     int healAmount = m2.getMaxHp() / 20;
                     if (healAmount > 0) {
                         m2.heal(healAmount);

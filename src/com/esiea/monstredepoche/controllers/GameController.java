@@ -5,6 +5,8 @@ import com.esiea.monstredepoche.loaders.MonsterLoader;
 import com.esiea.monstredepoche.models.*;
 import com.esiea.monstredepoche.models.enums.AttackType;
 import com.esiea.monstredepoche.models.enums.MonsterType;
+import com.esiea.monstredepoche.models.monsters.PlantMonster;
+import com.esiea.monstredepoche.models.monsters.InsectMonster;
 import com.esiea.monstredepoche.models.items.Medicine;
 import com.esiea.monstredepoche.models.items.Potion;
 
@@ -49,13 +51,46 @@ public class GameController {
         availableMonsters = MonsterLoader.parseMonsterFile("resources/monsters.txt");
         availableAttacks = AttackLoader.parseAttackFile("resources/attacks.txt");
         
-        // Assigner des attaques aux monstres (simplifié - assigne les 4 premières attaques)
+        // Assigner des attaques aux monstres selon leur type
+        assignAttacksToMonsters();
+    }
+    
+    /**
+     * Assigner des attaques aux monstres selon leur type élémentaire.
+     * Chaque monstre reçoit des attaques de son type + une attaque normale.
+     */
+    private void assignAttacksToMonsters() {
         for (Monster monster : availableMonsters) {
-            int count = 0;
+            AttackType monsterAttackType = convertMonsterTypeToAttackType(monster.getType());
+            
+            // Trouver les attaques correspondant au type du monstre
+            List<Attack> matchingAttacks = new ArrayList<>();
             for (Attack attack : availableAttacks) {
-                if (count >= 4) break;
+                if (attack.getType() == monsterAttackType) {
+                    matchingAttacks.add(attack);
+                }
+            }
+            
+            // Ajouter une attaque normale si disponible
+            Attack normalAttack = null;
+            for (Attack attack : availableAttacks) {
+                if (attack.getType() == AttackType.NORMAL) {
+                    normalAttack = attack;
+                    break;
+                }
+            }
+            
+            // Assigner jusqu'à 3 attaques spéciales + 1 normale (max 4)
+            int specialCount = 0;
+            for (Attack attack : matchingAttacks) {
+                if (specialCount >= 3) break;
                 monster.addAttack(attack);
-                count++;
+                specialCount++;
+            }
+            
+            // Ajouter l'attaque normale si disponible et qu'on n'a pas atteint la limite
+            if (normalAttack != null && monster.getAttacks().size() < 4) {
+                monster.addAttack(normalAttack);
             }
         }
     }
@@ -90,37 +125,267 @@ public class GameController {
         return player;
     }
     
+    /**
+     * Menu de sélection d'équipe amélioré.
+     * Permet de choisir 3 monstres avec affichage détaillé et possibilité de voir les détails.
+     */
     private void selectMonsters(Player player, String playerName) {
-        System.out.println("\n" + playerName + ", sélectionnez 3 monstres :");
-        for (int i = 0; i < availableMonsters.size(); i++) {
-            System.out.println((i + 1) + ". " + availableMonsters.get(i));
-        }
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("  SÉLECTION D'ÉQUIPE - " + playerName.toUpperCase());
+        System.out.println("=".repeat(50));
         
         List<Monster> selected = new ArrayList<>();
+        
         while (selected.size() < 3) {
-            System.out.print("Choisissez un monstre (1-" + availableMonsters.size() + ") : ");
-            try {
-                int choice = Integer.parseInt(scanner.nextLine()) - 1;
-                if (choice >= 0 && choice < availableMonsters.size()) {
-                    Monster monster = availableMonsters.get(choice);
-                    // Créer une copie pour chaque joueur
-                    Monster copy = createMonsterCopy(monster);
-                    selected.add(copy);
-                    player.addMonster(copy);
-                    System.out.println("Monstre ajouté : " + copy.getName());
-                } else {
-                    System.out.println("Choix invalide !");
+            // Afficher l'équipe actuelle
+            displayCurrentTeam(selected, playerName);
+            
+            // Afficher les monstres disponibles
+            displayAvailableMonsters(selected);
+            
+            System.out.println("\n" + "-".repeat(50));
+            System.out.println("Commandes disponibles :");
+            System.out.println("  - Entrez un numéro (1-" + availableMonsters.size() + ") pour sélectionner un monstre");
+            System.out.println("  - Entrez 'd' + numéro (ex: d1) pour voir les détails d'un monstre");
+            if (!selected.isEmpty()) {
+                System.out.println("  - Entrez 'r' + numéro (ex: r1) pour retirer un monstre de l'équipe");
+            }
+            System.out.print("\nVotre choix : ");
+            
+            String input = scanner.nextLine().trim().toLowerCase();
+            
+            if (input.startsWith("d")) {
+                // Afficher les détails d'un monstre
+                try {
+                    int index = Integer.parseInt(input.substring(1)) - 1;
+                    if (index >= 0 && index < availableMonsters.size()) {
+                        displayMonsterDetails(availableMonsters.get(index));
+                    } else {
+                        System.out.println("❌ Numéro invalide !");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("❌ Format invalide ! Utilisez 'd' suivi d'un numéro (ex: d1)");
                 }
-            } catch (NumberFormatException e) {
-                System.out.println("Veuillez entrer un nombre valide !");
+            } else if (input.startsWith("r") && !selected.isEmpty()) {
+                // Retirer un monstre de l'équipe
+                try {
+                    int index = Integer.parseInt(input.substring(1)) - 1;
+                    if (index >= 0 && index < selected.size()) {
+                        Monster removed = selected.remove(index);
+                        player.getMonsters().remove(removed);
+                        System.out.println("✅ " + removed.getName() + " retiré de l'équipe.");
+                    } else {
+                        System.out.println("❌ Numéro invalide !");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("❌ Format invalide ! Utilisez 'r' suivi d'un numéro (ex: r1)");
+                }
+            } else {
+                // Sélectionner un monstre
+                try {
+                    int choice = Integer.parseInt(input) - 1;
+                    if (choice >= 0 && choice < availableMonsters.size()) {
+                        Monster monster = availableMonsters.get(choice);
+                        
+                        // Vérifier si le monstre n'est pas déjà sélectionné
+                        if (selected.contains(monster)) {
+                            System.out.println("❌ Ce monstre est déjà dans votre équipe !");
+                        } else {
+                            // Créer une copie pour chaque joueur
+                            Monster copy = createMonsterCopy(monster);
+                            selected.add(copy);
+                            player.addMonster(copy);
+                            System.out.println("✅ " + copy.getName() + " ajouté à l'équipe !");
+                        }
+                    } else {
+                        System.out.println("❌ Choix invalide !");
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("❌ Veuillez entrer un nombre valide !");
+                }
+            }
+        }
+        
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("✅ Équipe complète pour " + playerName + " !");
+        displayCurrentTeam(selected, playerName);
+        System.out.println("=".repeat(50) + "\n");
+    }
+    
+    /**
+     * Affiche l'équipe actuellement sélectionnée.
+     */
+    private void displayCurrentTeam(List<Monster> selected, String playerName) {
+        if (selected.isEmpty()) {
+            System.out.println("\n📋 Équipe actuelle : Aucun monstre sélectionné (0/3)");
+        } else {
+            System.out.println("\n📋 Équipe actuelle (" + selected.size() + "/3) :");
+            for (int i = 0; i < selected.size(); i++) {
+                Monster m = selected.get(i);
+                System.out.println("  " + (i + 1) + ". " + m.getName() + 
+                                 " (" + getMonsterTypeDisplay(m) + 
+                                 " | PV: " + m.getHp() + "/" + m.getMaxHp() + 
+                                 " | ATK: " + m.getAttack() + 
+                                 " | DEF: " + m.getDefense() + 
+                                 " | SPD: " + m.getSpeed() + ")");
             }
         }
     }
     
+    /**
+     * Affiche la liste des monstres disponibles avec leurs statistiques principales.
+     */
+    private void displayAvailableMonsters(List<Monster> selected) {
+        System.out.println("\n📦 Monstres disponibles :");
+        for (int i = 0; i < availableMonsters.size(); i++) {
+            Monster monster = availableMonsters.get(i);
+            String status = selected.contains(monster) ? " [DÉJÀ SÉLECTIONNÉ]" : "";
+            System.out.println(String.format("  %2d. %-15s | Type: %-8s | PV: %3d | ATK: %3d | DEF: %3d | SPD: %3d%s",
+                i + 1,
+                monster.getName(),
+                getMonsterTypeDisplay(monster),
+                monster.getMaxHp(),
+                monster.getAttack(),
+                monster.getDefense(),
+                monster.getSpeed(),
+                status));
+        }
+    }
+    
+    /**
+     * Affiche les détails complets d'un monstre.
+     */
+    private void displayMonsterDetails(Monster monster) {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("  DÉTAILS : " + monster.getName().toUpperCase());
+        System.out.println("=".repeat(50));
+        System.out.println("Type          : " + getMonsterTypeDisplay(monster));
+        System.out.println("Points de vie : " + monster.getHp() + "/" + monster.getMaxHp());
+        System.out.println("Attaque       : " + monster.getAttack());
+        System.out.println("Défense       : " + monster.getDefense());
+        System.out.println("Vitesse       : " + monster.getSpeed());
+        
+        // Afficher les attaques
+        System.out.println("\nAttaques disponibles (" + monster.getAttacks().size() + ") :");
+        if (monster.getAttacks().isEmpty()) {
+            System.out.println("  Aucune attaque assignée");
+        } else {
+            for (int i = 0; i < monster.getAttacks().size(); i++) {
+                Attack attack = monster.getAttacks().get(i);
+                System.out.println(String.format("  %d. %-20s | Puissance: %3d | Utilisations: %2d/%2d",
+                    i + 1,
+                    attack.getName(),
+                    attack.getPower(),
+                    attack.getNbUse(),
+                    attack.getMaxUses()));
+            }
+        }
+        System.out.println("=".repeat(50) + "\n");
+    }
+    
+    /**
+     * Crée une copie complète d'un monstre avec toutes ses caractéristiques.
+     * Nécessaire pour que chaque joueur ait sa propre instance.
+     * Recrée le monstre selon son type avec les mêmes paramètres.
+     */
     private Monster createMonsterCopy(Monster original) {
-        // Créer une copie du monstre avec les mêmes caractéristiques
-        // (simplifié - dans une vraie implémentation, il faudrait cloner)
-        return original; // Pour l'instant, on réutilise (à améliorer)
+        // Créer une copie selon le type de monstre
+        if (original instanceof com.esiea.monstredepoche.models.monsters.ElectricMonster) {
+            com.esiea.monstredepoche.models.monsters.ElectricMonster electric = 
+                (com.esiea.monstredepoche.models.monsters.ElectricMonster) original;
+            Monster copy = new com.esiea.monstredepoche.models.monsters.ElectricMonster(
+                original.getName(),
+                original.getMaxHp(),
+                original.getSpeed(),
+                original.getAttack(),
+                original.getDefense(),
+                electric.getParalysisChance()
+            );
+            copyAttacks(original, copy);
+            return copy;
+        } else if (original instanceof com.esiea.monstredepoche.models.monsters.WaterMonster) {
+            com.esiea.monstredepoche.models.monsters.WaterMonster water = 
+                (com.esiea.monstredepoche.models.monsters.WaterMonster) original;
+            Monster copy = new com.esiea.monstredepoche.models.monsters.WaterMonster(
+                original.getName(),
+                original.getMaxHp(),
+                original.getSpeed(),
+                original.getAttack(),
+                original.getDefense(),
+                water.getFloodChance(),
+                water.getFallChance()
+            );
+            copyAttacks(original, copy);
+            return copy;
+        } else if (original instanceof com.esiea.monstredepoche.models.monsters.GroundMonster) {
+            com.esiea.monstredepoche.models.monsters.GroundMonster ground = 
+                (com.esiea.monstredepoche.models.monsters.GroundMonster) original;
+            Monster copy = new com.esiea.monstredepoche.models.monsters.GroundMonster(
+                original.getName(),
+                original.getMaxHp(),
+                original.getSpeed(),
+                original.getAttack(),
+                original.getDefense(),
+                ground.getDigChance()
+            );
+            copyAttacks(original, copy);
+            return copy;
+        } else if (original instanceof com.esiea.monstredepoche.models.monsters.FireMonster) {
+            com.esiea.monstredepoche.models.monsters.FireMonster fire = 
+                (com.esiea.monstredepoche.models.monsters.FireMonster) original;
+            Monster copy = new com.esiea.monstredepoche.models.monsters.FireMonster(
+                original.getName(),
+                original.getMaxHp(),
+                original.getSpeed(),
+                original.getAttack(),
+                original.getDefense(),
+                fire.getBurnChance()
+            );
+            copyAttacks(original, copy);
+            return copy;
+        } else if (original instanceof PlantMonster) {
+            PlantMonster plant = (PlantMonster) original;
+            Monster copy = new PlantMonster(
+                original.getName(),
+                original.getMaxHp(),
+                original.getSpeed(),
+                original.getAttack(),
+                original.getDefense(),
+                plant.getHealChance()
+            );
+            copyAttacks(original, copy);
+            return copy;
+        } else if (original instanceof InsectMonster) {
+            Monster copy = new InsectMonster(
+                original.getName(),
+                original.getMaxHp(),
+                original.getSpeed(),
+                original.getAttack(),
+                original.getDefense()
+            );
+            copyAttacks(original, copy);
+            return copy;
+        }
+        
+        // Fallback (ne devrait jamais arriver)
+        return original;
+    }
+    
+    /**
+     * Copie les attaques d'un monstre vers un autre.
+     */
+    private void copyAttacks(Monster source, Monster target) {
+        for (Attack attack : source.getAttacks()) {
+            // Créer une copie de l'attaque pour éviter les références partagées
+            Attack attackCopy = new Attack(
+                attack.getName(),
+                attack.getType(),
+                attack.getPower(),
+                attack.getMaxUses(),
+                attack.getFailProbability()
+            );
+            target.addAttack(attackCopy);
+        }
     }
     
     private void giveItems(Player player) {
@@ -212,9 +477,39 @@ public class GameController {
             if (monster.isAlive()) {
                 System.out.printf("     Points de vie: %s [%d/%d] %s\n", hpBar, monster.getHp(), monster.getMaxHp(), statusCondition);
                 System.out.printf("     Type: %s | Attaque: %d | Défense: %d | Vitesse: %d\n", 
-                                monster.getType(), monster.getAttack(), monster.getDefense(), monster.getSpeed());
+                                getMonsterTypeDisplay(monster), monster.getAttack(), monster.getDefense(), monster.getSpeed());
             } else {
                 System.out.println("     ❌ KO (0/" + monster.getMaxHp() + " Points de vie)");
+            }
+        }
+    }
+    
+    /**
+     * Retourne le nom d'affichage du type de monstre en français.
+     * Convertit les types anglais de l'enum en français pour l'affichage.
+     */
+    private String getMonsterTypeDisplay(Monster monster) {
+        if (monster instanceof PlantMonster) {
+            return "Plante";
+        } else if (monster instanceof InsectMonster) {
+            return "Insecte";
+        } else {
+            // Convertit les types anglais en français pour l'affichage
+            switch (monster.getType()) {
+                case ELECTRIC:
+                    return "Foudre";
+                case WATER:
+                    return "Eau";
+                case GROUND:
+                    return "Terre";
+                case FIRE:
+                    return "Feu";
+                case PLANT:
+                    return "Plante";
+                case INSECT:
+                    return "Insecte";
+                default:
+                    return monster.getType().toString();
             }
         }
     }
@@ -305,7 +600,7 @@ public class GameController {
         System.out.println("\nType d'attaque :");
         System.out.println("1. Attaque normale (mains nues)");
         if (hasSpecialAttack) {
-            System.out.println("2. Attaque spéciale (" + monster.getType() + ")");
+            System.out.println("2. Attaque spéciale (" + getMonsterTypeDisplay(monster) + ")");
         }
         
         System.out.print("Votre choix : ");
@@ -353,15 +648,16 @@ public class GameController {
     
     private AttackType convertMonsterTypeToAttackType(MonsterType monsterType) {
         switch (monsterType) {
-            case FOUDRE:
+            case ELECTRIC:
                 return AttackType.ELECTRIC;
-            case EAU:
+            case WATER:
                 return AttackType.WATER;
-            case TERRE:
+            case GROUND:
                 return AttackType.GROUND;
-            case FEU:
+            case FIRE:
                 return AttackType.FIRE;
-            case NATURE:
+            case PLANT:
+            case INSECT:
                 return AttackType.NATURE;
             default:
                 return AttackType.NORMAL;

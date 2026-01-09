@@ -18,7 +18,7 @@ public class ElectricMonster extends Monster {
      * @param paralysisChance Probabilité de paralyser l'adversaire (entre 0.0 et 1.0)
      */
     public ElectricMonster(String name, int hp, int speed, int attack, int defense, double paralysisChance) {
-        super(name, MonsterType.FOUDRE, hp, speed, attack, defense);
+        super(name, MonsterType.ELECTRIC, hp, speed, attack, defense);
         this.paralysisChance = paralysisChance;
     }
     
@@ -43,6 +43,7 @@ public class ElectricMonster extends Monster {
     }
     
     public double getParalysisChance() {
+        paralysisChance = paralysisChance * 2;
         return paralysisChance;
     }
 }

@@ -19,52 +19,52 @@ public class TypeAdvantageCalculator {
      * @return Multiplicateur de dégâts (2.0, 0.5 ou 1.0)
      */
     public static double getAdvantageMultiplier(MonsterType attacker, MonsterType defender) {
-        // Foudre est fort contre Eau, faible contre Terre
-        if (attacker == MonsterType.FOUDRE) {
-            if (defender == MonsterType.EAU) {
+        // Electric est fort contre Water, faible contre Ground
+        if (attacker == MonsterType.ELECTRIC) {
+            if (defender == MonsterType.WATER) {
                 return Constants.TYPE_ADVANTAGE_MULTIPLIER;
             }
-            if (defender == MonsterType.TERRE) {
+            if (defender == MonsterType.GROUND) {
                 return Constants.TYPE_DISADVANTAGE_MULTIPLIER;
             }
         }
         
-        // Eau est fort contre Feu, faible contre Foudre
-        if (attacker == MonsterType.EAU) {
-            if (defender == MonsterType.FEU) {
+        // Water est fort contre Fire, faible contre Electric
+        if (attacker == MonsterType.WATER) {
+            if (defender == MonsterType.FIRE) {
                 return Constants.TYPE_ADVANTAGE_MULTIPLIER;
             }
-            if (defender == MonsterType.FOUDRE) {
+            if (defender == MonsterType.ELECTRIC) {
                 return Constants.TYPE_DISADVANTAGE_MULTIPLIER;
             }
         }
         
-        // Terre est fort contre Foudre, faible contre Nature
-        if (attacker == MonsterType.TERRE) {
-            if (defender == MonsterType.FOUDRE) {
+        // Ground est fort contre Electric, faible contre Nature (Plant ou Insect)
+        if (attacker == MonsterType.GROUND) {
+            if (defender == MonsterType.ELECTRIC) {
                 return Constants.TYPE_ADVANTAGE_MULTIPLIER;
             }
-            if (defender == MonsterType.NATURE) {
+            if (MonsterType.isNatureType(defender)) {
                 return Constants.TYPE_DISADVANTAGE_MULTIPLIER;
             }
         }
         
-        // Feu est fort contre Nature, faible contre Eau
-        if (attacker == MonsterType.FEU) {
-            if (defender == MonsterType.NATURE) {
+        // Fire est fort contre Nature (Plant ou Insect), faible contre Water
+        if (attacker == MonsterType.FIRE) {
+            if (MonsterType.isNatureType(defender)) {
                 return Constants.TYPE_ADVANTAGE_MULTIPLIER;
             }
-            if (defender == MonsterType.EAU) {
+            if (defender == MonsterType.WATER) {
                 return Constants.TYPE_DISADVANTAGE_MULTIPLIER;
             }
         }
         
-        // Nature est fort contre Terre, faible contre Feu
-        if (attacker == MonsterType.NATURE) {
-            if (defender == MonsterType.TERRE) {
+        // Nature (Plant ou Insect) est fort contre Ground, faible contre Fire
+        if (MonsterType.isNatureType(attacker)) {
+            if (defender == MonsterType.GROUND) {
                 return Constants.TYPE_ADVANTAGE_MULTIPLIER;
             }
-            if (defender == MonsterType.FEU) {
+            if (defender == MonsterType.FIRE) {
                 return Constants.TYPE_DISADVANTAGE_MULTIPLIER;
             }
         }

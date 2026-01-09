@@ -20,7 +20,7 @@ public class GroundMonster extends Monster {
      * @param digChance Probabilité de s'enfouir sous terre
      */
     public GroundMonster(String name, int hp, int speed, int attack, int defense, double digChance) {
-        super(name, MonsterType.TERRE, hp, speed, attack, defense);
+        super(name, MonsterType.GROUND, hp, speed, attack, defense);
         this.digChance = digChance;
         this.isUnderground = false;
         this.undergroundDuration = 0;

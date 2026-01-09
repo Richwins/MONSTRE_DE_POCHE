@@ -202,15 +202,16 @@ public class TurnManager {
         
         // Correspondance entre types de monstre et types d'attaque
         switch (monsterType) {
-            case FOUDRE:
+            case ELECTRIC:
                 return attackType == AttackType.ELECTRIC;
-            case EAU:
+            case WATER:
                 return attackType == AttackType.WATER;
-            case TERRE:
+            case GROUND:
                 return attackType == AttackType.GROUND;
-            case FEU:
+            case FIRE:
                 return attackType == AttackType.FIRE;
-            case NATURE:
+            case PLANT:
+            case INSECT:
                 return attackType == AttackType.NATURE;
             default:
                 return false;
@@ -231,7 +232,7 @@ public class TurnManager {
         }
         
         // Les monstres de type eau ne glissent pas
-        if (attacker.getType() == MonsterType.EAU) {
+        if (attacker.getType() == MonsterType.WATER) {
             return false;
         }
         

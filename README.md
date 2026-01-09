@@ -14,6 +14,71 @@ Jeu de combat inspiré de Pokémon où deux joueurs s'affrontent avec leurs équ
 4. Compiler le projet
 5. Exécuter la classe `Main.java`
 
+## Lancement du projet
+
+Le jeu peut être lancé en **interface console** (par défaut) ou en **interface graphique JavaFX**.
+
+### Choix du mode d'affichage
+
+Au lancement, le programme vous demande de choisir :
+- **1** : Interface console (par défaut)
+- **2** : Interface graphique JavaFX
+
+Vous pouvez aussi lancer directement avec un argument :
+- `java com.esiea.monstredepoche.Main` → Interface console
+- `java com.esiea.monstredepoche.Main gui` → Interface graphique
+
+### Option 2 : En ligne de commande (PowerShell)
+
+```powershell
+# 1. Se placer à la racine du projet
+cd "chemin\vers\MONSTRE_DE_POCHE"
+
+# 2. Compiler le projet (si nécessaire)
+javac -d out\production\MONSTRE_DE_POCHE -cp src -encoding UTF-8 src\com\esiea\monstredepoche\models\monsters\*.java src\com\esiea\monstredepoche\*.java
+
+# 3. Lancer le jeu
+# Interface console (par défaut)
+java -cp "out\production\MONSTRE_DE_POCHE;resources" com.esiea.monstredepoche.Main
+
+# Interface graphique (nécessite JavaFX)
+java --module-path /chemin/vers/javafx-sdk/lib --add-modules javafx.controls,javafx.fxml -cp "out\production\MONSTRE_DE_POCHE;resources" com.esiea.monstredepoche.Main gui
+```
+
+### Option 3 : En ligne de commande (Bash/Linux/Mac)
+
+```bash
+# 1. Se placer à la racine du projet
+cd chemin/vers/MONSTRE_DE_POCHE
+
+# 2. Compiler le projet
+javac -d out/production/MONSTRE_DE_POCHE -cp src -encoding UTF-8 $(find src -name "*.java")
+
+# 3. Lancer le jeu
+# Interface console (par défaut)
+java -cp "out/production/MONSTRE_DE_POCHE:resources" com.esiea.monstredepoche.Main
+
+# Interface graphique (nécessite JavaFX)
+java --module-path /chemin/vers/javafx-sdk/lib --add-modules javafx.controls,javafx.fxml -cp "out/production/MONSTRE_DE_POCHE:resources" com.esiea.monstredepoche.Main gui
+```
+
+### Interface graphique JavaFX
+
+Le projet inclut une interface graphique moderne avec un style inspiré de Pokémon. 
+
+**Caractéristiques** :
+- Menu principal avec navigation
+- Sélection d'équipe interactive
+- Vue de combat avec boutons d'action
+- Palette de couleurs Pokémon
+- **Les affichages console sont conservés** : toutes les actions s'affichent aussi dans la console
+
+**Configuration requise** :
+- JavaFX SDK (voir [README_JAVAFX.md](README_JAVAFX.md) pour les instructions détaillées)
+- Java 11 ou supérieur
+
+**Note** : L'interface graphique est optionnelle. Le jeu fonctionne parfaitement en mode console sans JavaFX.
+
 ## Structure du projet
 
 ### Arborescence des packages
@@ -69,6 +134,12 @@ com.esiea.monstredepoche/
 ├── utils/
 │   ├── RandomGenerator.java
 │   └── Constants.java
+│
+├── gui/                    # Interface graphique JavaFX (optionnelle)
+│   ├── MonsterGameApp.java
+│   ├── MainMenuController.java
+│   ├── TeamSelectionController.java
+│   └── BattleViewController.java
 │
 └── Main.java
 ```
@@ -205,6 +276,8 @@ Point d'entrée du programme.
 resources/
 ├── monsters.txt
 ├── attacks.txt
+├── styles/
+│   └── pokemon-style.css    # Feuille de style pour l'interface JavaFX
 └── README.txt
 ```
 
@@ -345,26 +418,38 @@ Dégâts = ((11 × attaque × puissance) / (25 × défense adverse) + 2) × avan
 ### monsters.txt
 ```
 Monster
-Name Pikachu
-Type Electric
-HP 110 141
-Speed 110 141
-Attack 75 106
-Defense 50 82
-Paralysis 0.2
+    Name Pikachu
+    Type Electric
+    HP 110 141
+    Speed 110 141
+    Attack 75 106
+    Defense 50 82
+    Paralysis 0.2
 EndMonster
 ```
+
+**Notes importantes :**
+- Les champs doivent être indentés avec 4 espaces (même format que `attacks.txt`)
+- Les champs peuvent être entrés dans n'importe quel ordre
+- Les valeurs avec deux nombres (ex: `HP 110 141`) représentent les bornes min/max
+- **Les types de monstres sont en anglais** : `Electric`, `Water`, `Ground`, `Fire`, `Plant`, `Insect`
+- Champs optionnels selon le type : `Paralysis`, `Flood`, `Fall`, `Dig`, `Burn`, `Heal`
 
 ### attacks.txt
 ```
 Attack
-Name Eclair
-Type Electric
-Power 40
-NbUse 10
-Fail 0.07
+    Name Eclair
+    Type Electric
+    Power 40
+    NbUse 10
+    Fail 0.07
 EndAttack
 ```
+
+**Notes importantes :**
+- Les champs doivent être indentés avec 4 espaces
+- Les champs peuvent être entrés dans n'importe quel ordre
+- Les types d'attaques disponibles : `Electric`, `Water`, `Ground`, `Fire`, `Nature`, `Normal`
 
 ## Commandes en jeu
 
@@ -389,10 +474,11 @@ Le jeu a été conçu pour être facilement extensible :
 - Ajouter de nouveaux types de monstres
 - Créer de nouvelles attaques
 - Implémenter des objets personnalisés
-- Ajouter un menu de sélection d'équipe
-- Créer une interface graphique
+- ✅ Menu de sélection d'équipe (implémenté)
+- ✅ Interface graphique JavaFX (implémentée)
 - Développer une IA pour jouer en solo
 - Ajouter un mode multijoueur en ligne
+- Améliorer l'interface graphique (animations, effets visuels)
 
 ## Auteurs
 Projet réalisé dans le cadre du cours INF3132 - Programmation Orientée Objet

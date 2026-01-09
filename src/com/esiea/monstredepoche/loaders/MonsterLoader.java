@@ -70,34 +70,31 @@ public class MonsterLoader {
         int defense = DataParser.randomInRange(defenseRange[0], defenseRange[1]);
         
         switch (type) {
-            case FOUDRE:
+            case ELECTRIC:
                 double paralysis = Double.parseDouble(data.getOrDefault("Paralysis", "0.2"));
                 return new ElectricMonster(name, hp, speed, attack, defense, paralysis);
                 
-            case EAU:
+            case WATER:
                 double floodChance = Double.parseDouble(data.getOrDefault("Flood", "0.3"));
                 double fallChance = Double.parseDouble(data.getOrDefault("Fall", "0.2"));
                 return new WaterMonster(name, hp, speed, attack, defense, floodChance, fallChance);
                 
-            case TERRE:
+            case GROUND:
                 double digChance = Double.parseDouble(data.getOrDefault("Dig", "0.3"));
                 return new GroundMonster(name, hp, speed, attack, defense, digChance);
                 
-            case FEU:
+            case FIRE:
                 double burnChance = Double.parseDouble(data.getOrDefault("Burn", "0.3"));
                 return new FireMonster(name, hp, speed, attack, defense, burnChance);
                 
-            case NATURE:
-                // Déterminer si c'est un monstre Plante ou Insecte
-                // Si le champ "Heal" existe → Plante, sinon → Insecte
-                if (data.containsKey("Heal")) {
-                    // Monstre Plante : soin d'état (~20% de chance)
-                    double healChance = Double.parseDouble(data.get("Heal"));
-                    return new PlantMonster(name, hp, speed, attack, defense, healChance);
-                } else {
-                    // Monstre Insecte : empoisonnement 1 sur 3
-                    return new InsectMonster(name, hp, speed, attack, defense);
-                }
+            case PLANT:
+                // Monstre Plante : soin d'état (~20% de chance)
+                double healChance = Double.parseDouble(data.getOrDefault("Heal", "0.2"));
+                return new PlantMonster(name, hp, speed, attack, defense, healChance);
+                
+            case INSECT:
+                // Monstre Insecte : empoisonnement 1 sur 3
+                return new InsectMonster(name, hp, speed, attack, defense);
                 
             default:
                 return null;
@@ -110,22 +107,24 @@ public class MonsterLoader {
         switch (normalized) {
             case "FOUDRE":
             case "ELECTRIC":
-                return MonsterType.FOUDRE;
+                return MonsterType.ELECTRIC;
             case "EAU":
             case "WATER":
-                return MonsterType.EAU;
+                return MonsterType.WATER;
             case "TERRE":
             case "GROUND":
-                return MonsterType.TERRE;
+                return MonsterType.GROUND;
             case "FEU":
             case "FIRE":
-                return MonsterType.FEU;
-            case "NATURE":  // Catégorie (pas dans les fichiers)
-            case "PLANTE":  // Type réel dans le fichier
-            case "PLANT":   // Anglais
-            case "INSECTE": // Type réel dans le fichier
-            case "INSECT":  // Anglais
-                return MonsterType.NATURE; // Tous regroupés sous NATURE dans le code
+                return MonsterType.FIRE;
+            case "PLANTE":
+            case "PLANT":
+                return MonsterType.PLANT;
+            case "INSECTE":
+            case "INSECT":
+                return MonsterType.INSECT;
+            case "NATURE":  // Catégorie (ne devrait pas être dans les fichiers)
+                throw new IllegalArgumentException("Type 'Nature' est une catégorie, utilisez 'Plant' ou 'Insect' dans le fichier");
             default:
                 throw new IllegalArgumentException("Type de monstre inconnu: " + typeStr);
         }

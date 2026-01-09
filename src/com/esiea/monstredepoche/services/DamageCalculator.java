@@ -46,19 +46,19 @@ public class DamageCalculator {
         
         // Calcul de l'avantage de type basé sur le type de l'attaque
         double advantage = 1.0;
-        if (attack.getType() == AttackType.ELECTRIC && defender.getType() == MonsterType.EAU) {
+        if (attack.getType() == AttackType.ELECTRIC && defender.getType() == MonsterType.WATER) {
             advantage = Constants.TYPE_ADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.ELECTRIC && defender.getType() == MonsterType.TERRE) {
+        } else if (attack.getType() == AttackType.ELECTRIC && defender.getType() == MonsterType.GROUND) {
             advantage = Constants.TYPE_DISADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.WATER && defender.getType() == MonsterType.FEU) {
+        } else if (attack.getType() == AttackType.WATER && defender.getType() == MonsterType.FIRE) {
             advantage = Constants.TYPE_ADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.WATER && defender.getType() == MonsterType.FOUDRE) {
+        } else if (attack.getType() == AttackType.WATER && defender.getType() == MonsterType.ELECTRIC) {
             advantage = Constants.TYPE_DISADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.GROUND && defender.getType() == MonsterType.FOUDRE) {
+        } else if (attack.getType() == AttackType.GROUND && defender.getType() == MonsterType.ELECTRIC) {
             advantage = Constants.TYPE_ADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.FIRE && defender.getType() == MonsterType.NATURE) {
+        } else if (attack.getType() == AttackType.FIRE && MonsterType.isNatureType(defender.getType())) {
             advantage = Constants.TYPE_ADVANTAGE_MULTIPLIER;
-        } else if (attack.getType() == AttackType.FIRE && defender.getType() == MonsterType.EAU) {
+        } else if (attack.getType() == AttackType.FIRE && defender.getType() == MonsterType.WATER) {
             advantage = Constants.TYPE_DISADVANTAGE_MULTIPLIER;
         }
         

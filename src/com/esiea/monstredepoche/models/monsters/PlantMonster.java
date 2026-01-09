@@ -8,19 +8,25 @@ import com.esiea.monstredepoche.services.StatusEffectManager;
 import com.esiea.monstredepoche.utils.RandomGenerator;
 
 /**
- * Monstre de type Plante (sous-type de Nature).
- * Capacité spéciale : peut se soigner des altérations d'état (~20% de chance).
- * Bénéficie aussi de la récupération 1/20 PV sur terrain inondé (capacité Nature).
+ * Monstre de type Plante (sous-type de la catégorie Nature).
+ * Hérite de NatureMonster pour bénéficier de la récupération de PV sur terrain inondé.
+ * 
+ * Capacité spéciale spécifique : peut se soigner des altérations d'état (~20% de chance).
  */
-public class PlantMonster extends Monster {
+public class PlantMonster extends NatureMonster {
     private double healChance;
     
     /**
-     * Constructeur d'un monstre de plante
+     * Constructeur d'un monstre de type Plante.
+     * @param name      Le nom du monstre
+     * @param hp        Les points de vie du monstre
+     * @param speed     La vitesse du monstre
+     * @param attack    L'attaque du monstre
+     * @param defense   La défense du monstre
      * @param healChance Probabilité de se soigner des altérations d'état (~20%)
      */
     public PlantMonster(String name, int hp, int speed, int attack, int defense, double healChance) {
-        super(name, MonsterType.NATURE, hp, speed, attack, defense);
+        super(name, MonsterType.PLANT, hp, speed, attack, defense);
         this.healChance = healChance;
     }
     

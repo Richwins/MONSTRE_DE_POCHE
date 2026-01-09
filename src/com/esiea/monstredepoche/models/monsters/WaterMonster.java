@@ -20,7 +20,7 @@ public class WaterMonster extends Monster {
      * @param fallChance Probabilité de faire glisser l'adversaire (non implémenté)
      */
     public WaterMonster(String name, int hp, int speed, int attack, int defense, double floodChance, double fallChance) {
-        super(name, MonsterType.EAU, hp, speed, attack, defense);
+        super(name, MonsterType.WATER, hp, speed, attack, defense);
         this.floodChance = floodChance;
         this.fallChance = fallChance;
     }
