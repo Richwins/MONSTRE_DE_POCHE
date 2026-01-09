@@ -59,6 +59,84 @@ java --module-path "$JAVAFX_PATH" --add-modules javafx.controls,javafx.fxml,java
 java -cp "out/production/MONSTRE_DE_POCHE:resources" com.esiea.monstredepoche.Main
 ```
 
+## Fonctionnalités du jeu
+
+### Modes de jeu
+- **Mode Deux Joueurs (1v1)** : Affrontement entre deux joueurs humains
+- **Mode Solo (vs Bot)** : Affrontement contre une IA qui prend des décisions automatiques
+
+### Système de combat
+- **Combat au tour par tour** : Chaque joueur choisit une action par tour
+- **Ordre d'exécution** : Changements de monstres → Objets → Attaques (selon la vitesse)
+- **Système de vitesse** : Le monstre le plus rapide attaque en premier
+- **Calcul de dégâts** : Formules complexes avec coefficients aléatoires et avantages de type
+- **Attaques spéciales** : Chaque monstre peut utiliser des attaques de son type élémentaire
+- **Attaques à mains nues** : Possibilité d'attaquer sans utiliser d'attaque spéciale
+
+### Gestion des équipes
+- **Sélection d'équipe** : Chaque joueur choisit 3 monstres parmi ceux disponibles
+- **Changement de monstre** : Possibilité de remplacer le monstre actif pendant le combat
+- **Gestion des réserves** : Suivi des monstres en réserve et de leur état
+
+### Système de types élémentaires
+- **6 types de monstres** : Foudre, Eau, Terre, Feu, Plante, Insecte
+- **Avantages et faiblesses** : Système de type avec multiplicateurs de dégâts (x2.0 ou x0.5)
+- **Correspondances** : Foudre > Eau, Eau > Feu, Feu > Nature, etc.
+
+### Capacités spéciales par type
+- **Foudre** : Peut paralyser l'adversaire (25% de chance de rater une attaque)
+- **Eau** : Peut inonder le terrain (effets sur les monstres Nature et guérison des brûlures/empoisonnements)
+- **Terre** : Peut s'enfouir sous terre (double la défense temporairement)
+- **Feu** : Peut brûler l'adversaire (dégâts progressifs)
+- **Plante** : Peut se soigner des altérations d'état
+- **Insecte** : Peut empoisonner l'adversaire (dégâts progressifs)
+
+### Système d'altérations d'état
+- **Paralysie** : 25% de chance de rater une attaque, se dissipe progressivement
+- **Brûlure** : Dégâts de 10% de l'attaque du monstre à chaque tour
+- **Empoisonnement** : Dégâts de 10% de l'attaque du monstre à chaque tour
+- **Un seul état à la fois** : Un monstre ne peut avoir qu'une seule altération d'état
+
+### Système de terrain
+- **Terrain normal** : État par défaut sans effets spéciaux
+- **Terrain inondé** : Peut être activé par les monstres Eau
+  - Soigne les monstres Nature (1/20 des PV max) après utilisation d'attaque spéciale
+  - Guérit automatiquement les brûlures et empoisonnements
+  - Peut faire glisser les monstres non-Eau (annule leur attaque et inflige des dégâts)
+
+### Système d'objets
+- **Potions** : Restaurent les points de vie et/ou augmentent l'attaque ou la défense
+- **Médicaments** : Soignent les altérations d'état (paralysie, brûlure, empoisonnement)
+- **Utilisation stratégique** : Chaque joueur reçoit 5 objets au début du combat
+
+### Système d'attaques
+- **Attaques spéciales** : Chaque monstre peut avoir jusqu'à 4 attaques
+- **Nombre d'utilisations limité** : Chaque attaque a un nombre d'utilisations maximum
+- **Probabilité d'échec** : Certaines attaques peuvent échouer selon leur probabilité
+- **Types d'attaques** : Normal, Electric, Water, Ground, Fire, Nature
+
+### Interface utilisateur
+- **Interface console** : Mode texte complet avec toutes les fonctionnalités
+- **Interface graphique JavaFX** : Interface moderne avec :
+  - Menu principal interactif
+  - Sélection d'équipe avec cartes visuelles
+  - Vue de combat en temps réel avec barres de vie
+  - Affichage des statistiques complètes (HP, ATK, DEF, SPD)
+  - Indicateurs d'état visuels
+  - Log de combat détaillé
+  - Style dark/neon avec effets visuels
+
+### Intelligence artificielle (Bot)
+- **Sélection automatique d'équipe** : Le bot choisit aléatoirement 3 monstres
+- **Décisions intelligentes** : Le bot choisit entre attaquer, utiliser un objet ou changer de monstre
+- **Préférence pour les attaques spéciales** : 70% de chance d'utiliser une attaque spéciale si disponible
+- **Gestion des situations critiques** : Le bot adapte ses choix selon l'état du combat
+
+### Chargement de données
+- **Fichiers de configuration** : Chargement des monstres et attaques depuis `monsters.txt` et `attacks.txt`
+- **Plages de valeurs** : Statistiques générées aléatoirement dans des plages définies
+- **Extensibilité** : Facile d'ajouter de nouveaux monstres et attaques via les fichiers texte
+
 ## Modes de jeu
 
 ### Mode Deux Joueurs (1v1)
@@ -141,19 +219,6 @@ com.esiea.monstredepoche/
 ├── gui/             # Interface graphique JavaFX
 └── Main.java        # Point d'entrée
 ```
-
-## Résolution des problèmes
-
-**Erreur "package javafx does not exist"**
-- Vérifier que JavaFX SDK est présent dans `javafx-sdk-17.0.17/lib`
-- Utiliser `--module-path` et `--add-modules` lors de la compilation
-
-**Erreur "no suitable pipeline found" (Windows)**
-- Ajouter `javafx-sdk-17.0.17/bin` au PATH avant de lancer
-
-**Erreur "ClassNotFoundException"**
-- Vérifier que `out/production/MONSTRE_DE_POCHE` existe
-- Vérifier que `resources` est dans le classpath
 
 ## Auteurs
 Projet réalisé dans le cadre du cours INF3132 - Programmation Orientée Objet
