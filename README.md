@@ -39,10 +39,6 @@ java --module-path "$javafxPath" --add-modules javafx.controls,javafx.fxml,javaf
 java -cp "out\production\MONSTRE_DE_POCHE;resources" com.esiea.monstredepoche.Main
 ```
 
-**Scripts disponibles :**
-- `.\launch-gui.ps1` (interface graphique)
-- `.\launch-console.ps1` (interface console)
-
 ### Linux (Bash)
 
 **Compilation :**
@@ -61,13 +57,6 @@ java --module-path "$JAVAFX_PATH" --add-modules javafx.controls,javafx.fxml,java
 **Lancement Console :**
 ```bash
 java -cp "out/production/MONSTRE_DE_POCHE:resources" com.esiea.monstredepoche.Main
-```
-
-**Scripts disponibles :**
-```bash
-chmod +x launch-gui.sh launch-console.sh
-./launch-gui.sh    # Interface graphique
-./launch-console.sh # Interface console
 ```
 
 ## Modes de jeu
@@ -160,8 +149,7 @@ com.esiea.monstredepoche/
 - Utiliser `--module-path` et `--add-modules` lors de la compilation
 
 **Erreur "no suitable pipeline found" (Windows)**
-- Ajouter `javafx-sdk-17.0.17/bin` au PATH
-- Le script `launch-gui.ps1` le fait automatiquement
+- Ajouter `javafx-sdk-17.0.17/bin` au PATH avant de lancer
 
 **Erreur "ClassNotFoundException"**
 - Vérifier que `out/production/MONSTRE_DE_POCHE` existe
