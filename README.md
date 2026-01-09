@@ -26,7 +26,7 @@ $javaFiles = Get-ChildItem -Path src -Recurse -Filter *.java | ForEach-Object { 
 javac --module-path "$javafxPath" --add-modules javafx.controls,javafx.fxml,javafx.graphics -d out\production\MONSTRE_DE_POCHE -cp "src;resources" -encoding UTF-8 $javaFiles
 ```
 
-**Lancement GUI :**
+**Lancement GUI (direct) :**
 ```powershell
 $javafxPath = "javafx-sdk-17.0.17\lib"
 $binPath = "javafx-sdk-17.0.17\bin"
@@ -34,10 +34,15 @@ $env:PATH = "$binPath;$env:PATH"
 java --module-path "$javafxPath" --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out\production\MONSTRE_DE_POCHE;resources" com.esiea.monstredepoche.Main gui
 ```
 
-**Lancement Console :**
+**Lancement avec menu interactif (Console ou GUI) :**
 ```powershell
-java -cp "out\production\MONSTRE_DE_POCHE;resources" com.esiea.monstredepoche.Main
+# Pour pouvoir choisir le GUI depuis le menu, lancez avec les arguments JavaFX :
+$javafxPath = "javafx-sdk-17.0.17\lib"
+$binPath = "javafx-sdk-17.0.17\bin"
+$env:PATH = "$binPath;$env:PATH"
+java --module-path "$javafxPath" --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out\production\MONSTRE_DE_POCHE;resources" com.esiea.monstredepoche.Main
 ```
+*Note : Si vous choisissez l'option 2 (GUI) dans le menu interactif, le mode graphique se lancera automatiquement.*
 
 ### Linux (Bash)
 
@@ -48,16 +53,24 @@ JAVAFX_PATH="javafx-sdk-17.0.17/lib"
 javac --module-path "$JAVAFX_PATH" --add-modules javafx.controls,javafx.fxml,javafx.graphics -d out/production/MONSTRE_DE_POCHE -cp "src:resources" -encoding UTF-8 $(find src -name "*.java")
 ```
 
-**Lancement GUI :**
+**Lancement GUI (direct) :**
 ```bash
 JAVAFX_PATH="javafx-sdk-17.0.17/lib"
 java --module-path "$JAVAFX_PATH" --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out/production/MONSTRE_DE_POCHE:resources" com.esiea.monstredepoche.Main gui
 ```
 
-**Lancement Console :**
+**Lancement Console (avec choix interactif) :**
 ```bash
 java -cp "out/production/MONSTRE_DE_POCHE:resources" com.esiea.monstredepoche.Main
 ```
+
+**Lancement avec menu interactif (Console ou GUI) :**
+```bash
+# Pour pouvoir choisir le GUI depuis le menu, lancez avec les arguments JavaFX :
+JAVAFX_PATH="javafx-sdk-17.0.17/lib"
+java --module-path "$JAVAFX_PATH" --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out/production/MONSTRE_DE_POCHE:resources" com.esiea.monstredepoche.Main
+```
+*Note : Si vous choisissez l'option 2 (GUI) dans le menu interactif, le mode graphique se lancera automatiquement.*
 
 ## Fonctionnalités du jeu
 

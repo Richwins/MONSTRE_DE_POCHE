@@ -100,6 +100,7 @@ public class BattleViewController {
         logTextArea.setFont(Font.font("Consolas", 12));
         logTextArea.setStyle(
             "-fx-background-color: #1A1F1E;" +
+            "-fx-control-inner-background: #1A1F1E;" +
             "-fx-text-fill: #A8FF9E;" +
             "-fx-border-color: #39FF14;" +
             "-fx-border-width: 2;" +
@@ -109,7 +110,10 @@ public class BattleViewController {
         
         logArea = new ScrollPane(logTextArea);
         logArea.setFitToWidth(true);
-        logArea.setStyle("-fx-background: #1A1F1E;");
+        logArea.setStyle(
+            "-fx-background: #1A1F1E;" +
+            "-fx-background-color: #1A1F1E;"
+        );
         
         // Zone d'actions (bas)
         actionArea = createActionArea();

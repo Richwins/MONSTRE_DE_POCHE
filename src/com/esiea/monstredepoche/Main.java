@@ -43,7 +43,7 @@ public class Main {
         }
         
         if (useGUI) {
-            // Fermer le scanner avant de lancer JavaFX
+            // Fermer le scanner avant de lancer JavaFX pour éviter les conflits
             if (scanner != null) {
                 scanner.close();
             }
@@ -54,6 +54,18 @@ public class Main {
                 System.out.println("Note: Les actions de combat s'affichent également dans la console.");
                 System.out.println("Note: Le SDK JavaFX est inclus dans le projet (javafx-sdk-17.0.17/).");
                 MonsterGameApp.launch(MonsterGameApp.class, args);
+            } catch (NoClassDefFoundError e) {
+                // Erreur JavaFX non trouvé - l'utilisateur doit relancer avec les bons arguments
+                System.err.println("\n❌ ERREUR : JavaFX n'est pas disponible dans le classpath/module-path actuel.");
+                System.err.println("\nPour lancer le mode GUI, vous devez utiliser la commande complète avec JavaFX :\n");
+                System.err.println("Windows (PowerShell) :");
+                System.err.println("  $javafxPath = \"javafx-sdk-17.0.17\\lib\"");
+                System.err.println("  $binPath = \"javafx-sdk-17.0.17\\bin\"");
+                System.err.println("  $env:PATH = \"$binPath;$env:PATH\"");
+                System.err.println("  java --module-path \"$javafxPath\" --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp \"out\\production\\MONSTRE_DE_POCHE;resources\" com.esiea.monstredepoche.Main gui\n");
+                System.err.println("OU relancez simplement avec l'argument 'gui' :");
+                System.err.println("  java --module-path \"javafx-sdk-17.0.17\\lib\" --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp \"out\\production\\MONSTRE_DE_POCHE;resources\" com.esiea.monstredepoche.Main gui\n");
+                System.err.println("Consultez README.md pour plus d'informations.");
             } catch (Exception e) {
                 System.err.println("Erreur lors du lancement de l'interface graphique : " + e.getMessage());
                 e.printStackTrace();
@@ -63,9 +75,6 @@ public class Main {
                 System.err.println("3. Les DLL natives sont dans javafx-sdk-17.0.17/bin/");
                 System.err.println("4. Le projet est compilé (out/production/MONSTRE_DE_POCHE existe)");
                 System.err.println("\nConsultez README.md pour plus d'informations.");
-                System.err.println("\nLancement de l'interface console à la place...");
-                GameController game = new GameController();
-                game.startGame();
             }
         } else {
             // Lancer l'interface console

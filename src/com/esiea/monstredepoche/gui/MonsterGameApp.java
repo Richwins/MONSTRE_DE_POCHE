@@ -19,6 +19,7 @@ public class MonsterGameApp extends Application {
     private Scene mainMenuScene;
     private Scene teamSelectionScene;
     private Scene battleScene;
+    private TeamSelectionController teamSelectionController;
     
     @Override
     public void start(Stage primaryStage) {
@@ -40,10 +41,9 @@ public class MonsterGameApp extends Application {
             System.out.println("Note: Fichier CSS non trouvé, utilisation des styles par défaut.");
         }
         
-        // Créer les scènes
+        // Créer seulement la scène du menu principal
+        // Les autres scènes seront créées quand nécessaire
         createMainMenuScene(css);
-        createTeamSelectionScene(css);
-        createBattleScene(css);
         
         // Afficher le menu principal
         primaryStage.setScene(mainMenuScene);
@@ -64,8 +64,8 @@ public class MonsterGameApp extends Application {
     }
     
     private void createTeamSelectionScene(String css, boolean soloMode) {
-        TeamSelectionController controller = new TeamSelectionController(this, gameController, soloMode);
-        teamSelectionScene = controller.createScene();
+        teamSelectionController = new TeamSelectionController(this, gameController, soloMode);
+        teamSelectionScene = teamSelectionController.createScene();
         if (css != null) {
             teamSelectionScene.getStylesheets().add(css);
         }
@@ -98,6 +98,13 @@ public class MonsterGameApp extends Application {
         }
         createTeamSelectionScene(css, soloMode);
         primaryStage.setScene(teamSelectionScene);
+        
+        // Demander le nom du joueur 1 après que la scène soit affichée
+        Platform.runLater(() -> {
+            if (teamSelectionController != null) {
+                teamSelectionController.askPlayerNameIfNeeded();
+            }
+        });
     }
     
     public void showTeamSelection() {

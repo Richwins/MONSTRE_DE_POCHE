@@ -12,6 +12,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.application.Platform;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,10 +62,6 @@ public class TeamSelectionController {
         
         try {
             loadMonsters();
-            // Demander le nom du joueur avant de continuer (seulement pour le joueur 1 au début)
-            if (currentPlayer == 1) {
-                askPlayerName(1);
-            }
             setupUI();
         } catch (IOException e) {
             System.err.println("Erreur IOException lors du chargement des monstres : " + e.getMessage());
@@ -223,6 +220,19 @@ public class TeamSelectionController {
                 
                 // Lancer le combat avec les joueurs créés
                 app.startBattle(player1, player2, false);
+            }
+        }
+    }
+    
+    /**
+     * Demande le nom du joueur 1 si nécessaire (méthode publique pour être appelée depuis MonsterGameApp)
+     */
+    public void askPlayerNameIfNeeded() {
+        if (currentPlayer == 1 && player1Name == null) {
+            askPlayerName(1);
+            // Mettre à jour le titre avec le nom du joueur
+            if (player1Name != null && titleLabel != null) {
+                titleLabel.setText("SÉLECTION D'ÉQUIPE - " + player1Name.toUpperCase());
             }
         }
     }
