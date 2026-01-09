@@ -5,23 +5,24 @@
 # utilisez le SDK JavaFX complet au lieu du dossier lib/
 # Décommentez et modifiez la ligne $javafxSdkPath ci-dessous
 
-# Utiliser les dossiers lib/ et bin/ du projet (tout est dans le projet)
-$libPath = Join-Path $PSScriptRoot "lib"
-$binPath = Join-Path $PSScriptRoot "bin"
+# Utiliser le SDK JavaFX inclus dans le projet
+$javafxSdkPath = Join-Path $PSScriptRoot "javafx-sdk-17.0.17"
+$libPath = Join-Path $javafxSdkPath "lib"
+$binPath = Join-Path $javafxSdkPath "bin"
 
 # Ajouter les DLL natives au PATH
 if (Test-Path $binPath) {
     $dllCount = (Get-ChildItem -Path $binPath -Filter "*.dll" -ErrorAction SilentlyContinue | Measure-Object).Count
     if ($dllCount -gt 0) {
         $env:PATH = "$binPath;$env:PATH"
-        Write-Host "DLL natives trouvées dans bin/ ($dllCount fichiers)" -ForegroundColor Green
+        Write-Host "DLL natives trouvées dans javafx-sdk-17.0.17/bin/ ($dllCount fichiers)" -ForegroundColor Green
     } else {
-        Write-Host "ATTENTION: Le dossier bin/ existe mais ne contient pas de DLL natives !" -ForegroundColor Yellow
-        Write-Host "Exécutez: .\setup-javafx-native.ps1 pour copier les DLL depuis le SDK" -ForegroundColor Yellow
+        Write-Host "ATTENTION: Le dossier javafx-sdk-17.0.17/bin/ existe mais ne contient pas de DLL natives !" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "ATTENTION: Le dossier bin/ n'existe pas !" -ForegroundColor Red
-    Write-Host "Exécutez: .\setup-javafx-native.ps1 pour créer le dossier et copier les DLL" -ForegroundColor Yellow
+    Write-Host "ERREUR: Le dossier javafx-sdk-17.0.17/bin/ n'existe pas !" -ForegroundColor Red
+    Write-Host "Vérifiez que le SDK JavaFX est bien inclus dans le projet." -ForegroundColor Yellow
+    exit 1
 }
 
 $outPath = Join-Path $PSScriptRoot "out\production\MONSTRE_DE_POCHE"
@@ -35,11 +36,8 @@ java --module-path "$libPath" --add-modules javafx.controls,javafx.fxml,javafx.g
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "`nErreur lors du lancement. Vérifiez que:" -ForegroundColor Red
-    Write-Host "1. JavaFX est bien dans le dossier lib/ OU utilisez le SDK complet" -ForegroundColor Yellow
+    Write-Host "1. Le SDK JavaFX est bien dans javafx-sdk-17.0.17/" -ForegroundColor Yellow
     Write-Host "2. Le projet est compilé (out/production/MONSTRE_DE_POCHE existe)" -ForegroundColor Yellow
     Write-Host "3. Vous utilisez Java 11 ou supérieur" -ForegroundColor Yellow
-    Write-Host "`nSi vous obtenez 'no suitable pipeline found':" -ForegroundColor Cyan
-    Write-Host "- Utilisez le SDK JavaFX complet (pas seulement les JARs)" -ForegroundColor Yellow
-    Write-Host "- Les DLL natives sont nécessaires et se trouvent dans le SDK" -ForegroundColor Yellow
-    Write-Host "- Modifiez ce script pour utiliser le chemin vers le SDK complet" -ForegroundColor Yellow
+    Write-Host "4. Les DLL natives sont dans javafx-sdk-17.0.17/bin/" -ForegroundColor Yellow
 }

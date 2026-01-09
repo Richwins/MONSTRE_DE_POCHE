@@ -27,8 +27,9 @@ public class Main {
         }
         
         // Si pas d'argument, demander à l'utilisateur
+        Scanner scanner = null;
         if (args.length == 0) {
-            Scanner scanner = new Scanner(System.in);
+            scanner = new Scanner(System.in);
             System.out.println("=== Monstre de Poche ===");
             System.out.println("Choisissez le mode d'affichage :");
             System.out.println("1. Interface console (par défaut)");
@@ -42,24 +43,56 @@ public class Main {
         }
         
         if (useGUI) {
+            // Fermer le scanner avant de lancer JavaFX
+            if (scanner != null) {
+                scanner.close();
+            }
+            
             // Lancer l'interface graphique JavaFX
             try {
-                System.out.println("Lancement de l'interface graphique...");
+                System.out.println("Lancement de l'interface graphique JavaFX...");
                 System.out.println("Note: Les actions de combat s'affichent également dans la console.");
-                System.out.println("Note: Assurez-vous que JavaFX est dans le classpath.");
+                System.out.println("Note: Le SDK JavaFX est inclus dans le projet (javafx-sdk-17.0.17/).");
                 MonsterGameApp.launch(MonsterGameApp.class, args);
             } catch (Exception e) {
                 System.err.println("Erreur lors du lancement de l'interface graphique : " + e.getMessage());
-                System.err.println("JavaFX n'est peut-être pas dans le classpath.");
-                System.err.println("Consultez README_JAVAFX.md pour plus d'informations.");
+                e.printStackTrace();
+                System.err.println("\nVérifiez que :");
+                System.err.println("1. Le SDK JavaFX est présent dans javafx-sdk-17.0.17/");
+                System.err.println("2. Les JARs JavaFX sont dans javafx-sdk-17.0.17/lib/");
+                System.err.println("3. Les DLL natives sont dans javafx-sdk-17.0.17/bin/");
+                System.err.println("4. Le projet est compilé (out/production/MONSTRE_DE_POCHE existe)");
+                System.err.println("\nConsultez README.md pour plus d'informations.");
                 System.err.println("\nLancement de l'interface console à la place...");
                 GameController game = new GameController();
                 game.startGame();
             }
         } else {
-            // Lancer l'interface console (comportement original)
+            // Lancer l'interface console
+            if (scanner == null) {
+                scanner = new Scanner(System.in);
+            }
+            System.out.println("\n=== Monstre de Poche ===");
+            System.out.println("Choisissez le mode de jeu :");
+            System.out.println("1. Mode Deux Joueurs (1v1)");
+            System.out.println("2. Mode Solo (vs Bot)");
+            System.out.print("Votre choix (1 ou 2) : ");
+            
+            String gameMode = scanner.nextLine().trim();
             GameController game = new GameController();
-            game.startGame();
+            
+            if (gameMode.equals("2")) {
+                // Mode solo contre le bot
+                System.out.print("Entrez votre nom : ");
+                String playerName = scanner.nextLine().trim();
+                if (playerName.isEmpty()) {
+                    playerName = "Joueur";
+                }
+                game.startSoloGame(playerName);
+            } else {
+                // Mode deux joueurs (par défaut)
+                game.startGame();
+            }
         }
     }
 }

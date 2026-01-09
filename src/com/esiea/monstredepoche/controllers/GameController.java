@@ -25,34 +25,70 @@ public class GameController {
     private List<Monster> availableMonsters;
     private List<Attack> availableAttacks;
     private BattleController battleController;
+    private Bot bot; // Bot pour le mode solo
     
     public GameController() {
         this.scanner = new Scanner(System.in);
         this.availableMonsters = new ArrayList<>();
         this.availableAttacks = new ArrayList<>();
-    }
-    
-    public void startGame() {
-        System.out.println("=== Monstre de Poche ===");
-        System.out.println("Bienvenue dans le jeu de combat !\n");
         
+        // Charger les données au démarrage pour que GUI et console utilisent les mêmes données
         try {
             loadGameData();
-            setupPlayers();
-            battleController = new BattleController(setupPlayer1(), setupPlayer2());
-            battleController.initializeBattle();
-            runBattle();
         } catch (IOException e) {
             System.err.println("Erreur lors du chargement des données : " + e.getMessage());
         }
     }
     
+    /**
+     * Démarre le jeu en mode console.
+     * Charge les données, configure les joueurs et lance le combat.
+     * Les données sont déjà chargées dans le constructeur pour que GUI et console utilisent les mêmes.
+     */
+    /**
+     * Démarre le jeu en mode console.
+     * Charge les données, configure les joueurs et lance le combat.
+     * Les données sont déjà chargées dans le constructeur pour que GUI et console utilisent les mêmes.
+     */
+    public void startGame() {
+        System.out.println("=== Monstre de Poche ===");
+        System.out.println("Bienvenue dans le jeu de combat !\n");
+        
+        // Les données sont déjà chargées dans le constructeur
+        setupPlayers();
+        battleController = new BattleController(setupPlayer1(), setupPlayer2());
+        battleController.initializeBattle();
+        runBattle();
+    }
+    
+    /**
+     * Charge les données du jeu (monstres et attaques).
+     * Cette méthode est appelée automatiquement dans le constructeur
+     * pour que GUI et console utilisent les mêmes données.
+     */
     private void loadGameData() throws IOException {
         availableMonsters = MonsterLoader.parseMonsterFile("resources/monsters.txt");
         availableAttacks = AttackLoader.parseAttackFile("resources/attacks.txt");
         
         // Assigner des attaques aux monstres selon leur type
         assignAttacksToMonsters();
+    }
+    
+    /**
+     * Retourne la liste des monstres disponibles.
+     * Utilisé par le GUI pour afficher les monstres sélectionnables.
+     * @return Liste des monstres disponibles
+     */
+    public List<Monster> getAvailableMonsters() {
+        return new ArrayList<>(availableMonsters); // Retourne une copie pour éviter les modifications
+    }
+    
+    /**
+     * Retourne la liste des attaques disponibles.
+     * @return Liste des attaques disponibles
+     */
+    public List<Attack> getAvailableAttacks() {
+        return new ArrayList<>(availableAttacks); // Retourne une copie
     }
     
     /**
@@ -287,8 +323,11 @@ public class GameController {
      * Crée une copie complète d'un monstre avec toutes ses caractéristiques.
      * Nécessaire pour que chaque joueur ait sa propre instance.
      * Recrée le monstre selon son type avec les mêmes paramètres.
+     * 
+     * @param original Le monstre à copier
+     * @return Une copie complète du monstre
      */
-    private Monster createMonsterCopy(Monster original) {
+    public Monster createMonsterCopy(Monster original) {
         // Créer une copie selon le type de monstre
         if (original instanceof com.esiea.monstredepoche.models.monsters.ElectricMonster) {
             com.esiea.monstredepoche.models.monsters.ElectricMonster electric = 
@@ -397,6 +436,15 @@ public class GameController {
         player.addItem(new Medicine("Séchoir", "Assèche le terrain", false, true));
     }
     
+    /**
+     * Donne des objets à un joueur.
+     * Méthode publique pour être utilisée par le GUI.
+     * @param player Le joueur à qui donner les objets
+     */
+    public void giveItemsToPlayer(Player player) {
+        giveItems(player);
+    }
+    
     private void runBattle() {
         while (true) {
             Player winner = battleController.checkWinner();
@@ -418,14 +466,109 @@ public class GameController {
                 break;
             }
             
-            // Tour du joueur 2
-            processPlayerTurn(battleController.getField().getPlayer2());
+            // Tour du joueur 2 (humain ou bot)
+            if (bot != null && battleController.getField().getPlayer2() == bot.getPlayer()) {
+                // Le joueur 2 est le bot, prendre une décision automatique
+                processBotTurn();
+            } else {
+                // Le joueur 2 est humain
+                processPlayerTurn(battleController.getField().getPlayer2());
+            }
             
             // Exécuter le tour
             battleController.processTurn();
         }
         
         endGame();
+    }
+    
+    /**
+     * Traite le tour du bot (décision automatique)
+     */
+    private void processBotTurn() {
+        if (bot == null) {
+            return;
+        }
+        
+        System.out.println("\n=== Tour de " + bot.getName() + " ===");
+        System.out.println("Monstre actif : " + bot.getPlayer().getActiveMonster());
+        
+        TurnManager.Action action = bot.makeDecision();
+        if (action != null) {
+            battleController.getTurnManager().addAction(action);
+        } else {
+            System.out.println("🤖 " + bot.getName() + " ne peut pas agir.");
+        }
+    }
+    
+    /**
+     * Démarre un jeu en mode solo (joueur vs bot)
+     * @param playerName Le nom du joueur humain
+     */
+    public void startSoloGame(String playerName) {
+        System.out.println("=== Monstre de Poche - Mode Solo ===");
+        System.out.println("Bienvenue " + playerName + " ! Vous allez affronter un bot.\n");
+        
+        // Créer le bot
+        bot = new Bot("Bot");
+        
+        // Configurer le joueur humain
+        Player humanPlayer = new Player(playerName);
+        selectMonsters(humanPlayer, playerName);
+        giveItems(humanPlayer);
+        
+        // Configurer le bot (sélection aléatoire de monstres)
+        Player botPlayer = new Player("Bot");
+        selectRandomMonstersForBot(botPlayer);
+        giveItems(botPlayer);
+        bot.setPlayer(botPlayer);
+        
+        // Initialiser le combat
+        battleController = new BattleController(humanPlayer, botPlayer);
+        battleController.initializeBattle();
+        
+        // Lancer le combat
+        runBattle();
+    }
+    
+    /**
+     * Sélectionne aléatoirement 3 monstres pour le bot
+     * @param botPlayer Le joueur bot
+     */
+    private void selectRandomMonstersForBot(Player botPlayer) {
+        System.out.println("\n=== Configuration du Bot ===");
+        System.out.println("Le bot sélectionne son équipe aléatoirement...");
+        
+        List<Monster> available = new ArrayList<>(availableMonsters);
+        List<Monster> selected = new ArrayList<>();
+        
+        // Sélectionner 3 monstres aléatoirement
+        for (int i = 0; i < 3 && !available.isEmpty(); i++) {
+            int randomIndex = com.esiea.monstredepoche.utils.RandomGenerator.randomInRange(0, available.size() - 1);
+            Monster selectedMonster = available.remove(randomIndex);
+            Monster copy = createMonsterCopy(selectedMonster);
+            selected.add(copy);
+            botPlayer.addMonster(copy);
+            System.out.println("🤖 Bot sélectionne : " + copy.getName());
+        }
+        
+        System.out.println("✅ Équipe du Bot complète !\n");
+    }
+    
+    /**
+     * Retourne le bot actuel (pour le GUI)
+     * @return Le bot ou null si pas de mode solo
+     */
+    public Bot getBot() {
+        return bot;
+    }
+    
+    /**
+     * Définit le bot (pour le GUI)
+     * @param bot Le bot
+     */
+    public void setBot(Bot bot) {
+        this.bot = bot;
     }
     
     private void displayGameState() {
@@ -487,8 +630,12 @@ public class GameController {
     /**
      * Retourne le nom d'affichage du type de monstre en français.
      * Convertit les types anglais de l'enum en français pour l'affichage.
+     * Utilisé par le GUI et la console pour un affichage uniforme.
+     * 
+     * @param monster Le monstre dont on veut afficher le type
+     * @return Le nom du type en français (ex: "Foudre", "Eau", "Plante", "Insecte")
      */
-    private String getMonsterTypeDisplay(Monster monster) {
+    public String getMonsterTypeDisplay(Monster monster) {
         if (monster instanceof PlantMonster) {
             return "Plante";
         } else if (monster instanceof InsectMonster) {

@@ -1,6 +1,7 @@
 package com.esiea.monstredepoche.gui;
 
 import com.esiea.monstredepoche.controllers.GameController;
+import com.esiea.monstredepoche.models.Player;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -62,12 +63,16 @@ public class MonsterGameApp extends Application {
         }
     }
     
-    private void createTeamSelectionScene(String css) {
-        TeamSelectionController controller = new TeamSelectionController(this, gameController);
+    private void createTeamSelectionScene(String css, boolean soloMode) {
+        TeamSelectionController controller = new TeamSelectionController(this, gameController, soloMode);
         teamSelectionScene = controller.createScene();
         if (css != null) {
             teamSelectionScene.getStylesheets().add(css);
         }
+    }
+    
+    private void createTeamSelectionScene(String css) {
+        createTeamSelectionScene(css, false); // Par défaut, mode 1v1
     }
     
     private void createBattleScene(String css) {
@@ -82,11 +87,48 @@ public class MonsterGameApp extends Application {
         primaryStage.setScene(mainMenuScene);
     }
     
-    public void showTeamSelection() {
+    public void showTeamSelection(boolean soloMode) {
+        // Recréer la scène à chaque fois pour recharger les monstres
+        // Cela garantit que les données sont à jour
+        String css = null;
+        try {
+            css = getClass().getResource("/styles/pokemon-style.css").toExternalForm();
+        } catch (Exception e) {
+            // CSS non disponible, continuer sans style
+        }
+        createTeamSelectionScene(css, soloMode);
         primaryStage.setScene(teamSelectionScene);
     }
     
+    public void showTeamSelection() {
+        showTeamSelection(false); // Par défaut, mode 1v1
+    }
+    
     public void showBattle() {
+        primaryStage.setScene(battleScene);
+    }
+    
+    public void startBattle(Player player1, Player player2, boolean soloMode) {
+        // Créer le contrôleur de combat
+        BattleViewController battleController = new BattleViewController(this, gameController);
+        
+        // Recréer la scène de combat d'abord (pour initialiser l'UI)
+        String css = null;
+        try {
+            css = getClass().getResource("/styles/pokemon-style.css").toExternalForm();
+        } catch (Exception e) {
+            // CSS non disponible
+        }
+        
+        battleScene = battleController.createScene();
+        if (css != null) {
+            battleScene.getStylesheets().add(css);
+        }
+        
+        // Maintenant définir les joueurs (après que la scène soit créée)
+        battleController.setPlayers(player1, player2, soloMode);
+        
+        // Afficher la scène
         primaryStage.setScene(battleScene);
     }
     

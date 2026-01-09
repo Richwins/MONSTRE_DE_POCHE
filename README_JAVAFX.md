@@ -2,134 +2,21 @@
 
 ## Configuration requise
 
-Pour utiliser l'interface graphique JavaFX, vous devez ajouter JavaFX à votre projet.
+**✅ Le SDK JavaFX est maintenant inclus dans le projet !**
 
-### Option 1 : JavaFX SDK (Recommandé)
+Le projet contient le SDK JavaFX 17.0.17 dans le dossier `javafx-sdk-17.0.17/`. Aucune installation supplémentaire n'est nécessaire.
 
-1. **Télécharger JavaFX SDK** depuis [https://openjfx.io/](https://openjfx.io/)
-   - Choisissez la version compatible avec votre JDK (Java 11+ recommandé)
-   - Téléchargez le SDK pour votre système d'exploitation (Windows ou Linux)
+### Structure du SDK inclus
 
-2. **Ajouter JavaFX au classpath** :
-
-   #### **VS Code (Windows et Linux)**
-
-   **Méthode 1 : Via les paramètres du projet (Recommandé)**
-   
-   1. **Créer un dossier `lib` dans votre projet** :
-      ```
-      MONSTRE_DE_POCHE/
-      ├── lib/          ← Créer ce dossier
-      ├── src/
-      ├── resources/
-      └── ...
-      ```
-   
-   2. **Extraire les JARs JavaFX** :
-      - Extrayez le SDK JavaFX téléchargé
-      - Copiez tous les fichiers `.jar` du dossier `lib` du SDK vers le dossier `lib` de votre projet
-      - Vous devriez avoir des fichiers comme : `javafx-controls.jar`, `javafx-fxml.jar`, `javafx-graphics.jar`, etc.
-   
-   3. **Copier les DLL natives (Windows - IMPORTANT)** :
-      - Dans le SDK JavaFX, il y a un dossier `bin/` qui contient les DLL natives nécessaires
-      - **Utilisez le script `setup-javafx-native.ps1` fourni** (recommandé) :
-        ```powershell
-        .\setup-javafx-native.ps1
-        ```
-      - Le script copie automatiquement les DLL depuis le SDK vers le dossier `bin/` de votre projet
-      - **Note** : Le SDK JavaFX doit être dans `..\openjfx-17.0.17_windows-x64_bin-sdk\javafx-sdk-17.0.17`
-   
-   3. **Configurer VS Code** :
-      - Créez un fichier `.vscode/settings.json` à la racine du projet :
-      ```json
-      {
-          "java.project.referencedLibraries": [
-              "lib/**/*.jar"
-          ],
-          "java.configuration.runtimes": []
-      }
-      ```
-   
-   5. **Configurer le launch.json** (pour lancer avec JavaFX) :
-      - Créez ou modifiez `.vscode/launch.json` :
-      ```json
-      {
-          "version": "0.2.0",
-          "configurations": [
-              {
-                  "type": "java",
-                  "name": "Launch Console",
-                  "request": "launch",
-                  "mainClass": "com.esiea.monstredepoche.Main",
-                  "projectName": "MONSTRE_DE_POCHE",
-                  "args": []
-              },
-              {
-                  "type": "java",
-                  "name": "Launch GUI",
-                  "request": "launch",
-                  "mainClass": "com.esiea.monstredepoche.Main",
-                  "projectName": "MONSTRE_DE_POCHE",
-                  "args": ["gui"],
-                  "vmArgs": "--module-path \"${workspaceFolder}/lib\" --add-modules javafx.controls,javafx.fxml,javafx.graphics -Djava.library.path=\"${workspaceFolder}/bin\""
-              }
-          ]
-      }
-      ```
-   
-   **Méthode 2 : Via la ligne de commande**
-   
-   **Windows (PowerShell)** :
-   ```powershell
-   # 1. Copier les DLL natives (une seule fois) :
-   .\setup-javafx-native.ps1
-   
-   # 2. Compiler avec JavaFX (utilise les JARs dans lib/)
-   javac --module-path lib --add-modules javafx.controls,javafx.fxml,javafx.graphics -d out -cp src -encoding UTF-8 src\com\esiea\monstredepoche\models\monsters\*.java src\com\esiea\monstredepoche\*.java
-   
-   # 3. Lancer avec JavaFX (utilise lib/ et bin/ du projet)
-   $env:PATH = "bin;$env:PATH"
-   java --module-path lib --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out;resources" com.esiea.monstredepoche.Main gui
-   
-   # Ou simplement utiliser le script :
-   .\launch-gui.ps1
-   ```
-   
-   **Linux** :
-   ```bash
-   # 1. Télécharger et extraire JavaFX SDK dans ~/javafx-sdk (par exemple)
-   
-   # 2. Compiler avec JavaFX
-   javac --module-path ~/javafx-sdk/lib --add-modules javafx.controls,javafx.fxml,javafx.graphics -d out -cp src -encoding UTF-8 $(find src -name "*.java")
-   
-   # 3. Lancer avec JavaFX
-   java --module-path ~/javafx-sdk/lib --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out:resources" com.esiea.monstredepoche.Main gui
-   ```
-
-   #### **IntelliJ IDEA**
-   
-   - File → Project Structure → Libraries
-   - Cliquez sur "+" → Java
-   - Sélectionnez le dossier `lib` du SDK JavaFX téléchargé
-   - Ajoutez les modules : `javafx.controls`, `javafx.fxml`, `javafx.graphics`
-
-### Option 2 : Maven (si vous utilisez Maven)
-
-Ajoutez dans votre `pom.xml` :
-
-```xml
-<dependencies>
-    <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-controls</artifactId>
-        <version>17.0.2</version>
-    </dependency>
-    <dependency>
-        <groupId>org.openjfx</groupId>
-        <artifactId>javafx-fxml</artifactId>
-        <version>17.0.2</version>
-    </dependency>
-</dependencies>
+```
+MONSTRE_DE_POCHE/
+├── javafx-sdk-17.0.17/     ← SDK JavaFX inclus
+│   ├── lib/                ← JARs JavaFX
+│   ├── bin/                ← DLL natives (Windows) / .so (Linux)
+│   └── legal/              ← Licences
+├── src/
+├── resources/
+└── ...
 ```
 
 ## Utilisation
@@ -140,7 +27,43 @@ Ajoutez dans votre `pom.xml` :
 2. **Installez l'extension Java** (si ce n'est pas déjà fait) :
    - Ouvrez les extensions (Ctrl+Shift+X)
    - Recherchez "Extension Pack for Java" et installez-la
-3. **Lancez le programme** :
+3. **Configurer VS Code** (optionnel) :
+   - Créez un fichier `.vscode/settings.json` à la racine du projet :
+   ```json
+   {
+       "java.project.referencedLibraries": [
+           "javafx-sdk-17.0.17/lib/**/*.jar"
+       ],
+       "java.configuration.runtimes": []
+   }
+   ```
+4. **Configurer le launch.json** (optionnel) :
+   - Créez ou modifiez `.vscode/launch.json` :
+   ```json
+   {
+       "version": "0.2.0",
+       "configurations": [
+           {
+               "type": "java",
+               "name": "Launch Console",
+               "request": "launch",
+               "mainClass": "com.esiea.monstredepoche.Main",
+               "projectName": "MONSTRE_DE_POCHE",
+               "args": []
+           },
+           {
+               "type": "java",
+               "name": "Launch GUI",
+               "request": "launch",
+               "mainClass": "com.esiea.monstredepoche.Main",
+               "projectName": "MONSTRE_DE_POCHE",
+               "args": ["gui"],
+               "vmArgs": "--module-path \"${workspaceFolder}/javafx-sdk-17.0.17/lib\" --add-modules javafx.controls,javafx.fxml,javafx.graphics -Djava.library.path=\"${workspaceFolder}/javafx-sdk-17.0.17/bin\""
+           }
+       ]
+   }
+   ```
+5. **Lancez le programme** :
    - Appuyez sur `F5` ou allez dans Run → Start Debugging
    - Sélectionnez la configuration "Launch Console" ou "Launch GUI"
    - Ou utilisez le terminal intégré (voir ci-dessous)
@@ -154,9 +77,11 @@ Ajoutez dans votre `pom.xml` :
 # Option 1 : Utiliser le script (recommandé)
 .\launch-gui.ps1
 
-# Option 2 : Commande manuelle (tout est dans le projet)
-$env:PATH = "bin;$env:PATH"
-java --module-path lib --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out\production\MONSTRE_DE_POCHE;resources" com.esiea.monstredepoche.Main gui
+# Option 2 : Commande manuelle
+$javafxPath = "javafx-sdk-17.0.17\lib"
+$binPath = "javafx-sdk-17.0.17\bin"
+$env:PATH = "$binPath;$env:PATH"
+java --module-path "$javafxPath" --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out\production\MONSTRE_DE_POCHE;resources" com.esiea.monstredepoche.Main gui
 ```
 
 **Linux** :
@@ -165,8 +90,9 @@ java --module-path lib --add-modules javafx.controls,javafx.fxml,javafx.graphics
 ./launch-gui.sh
 
 # Option 2 : Commande manuelle
-export LD_LIBRARY_PATH=bin:$LD_LIBRARY_PATH
-java --module-path lib --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out/production/MONSTRE_DE_POCHE:resources" com.esiea.monstredepoche.Main gui
+JAVAFX_PATH="javafx-sdk-17.0.17/lib"
+export LD_LIBRARY_PATH=javafx-sdk-17.0.17/bin:$LD_LIBRARY_PATH
+java --module-path "$JAVAFX_PATH" --add-modules javafx.controls,javafx.fxml,javafx.graphics -cp "out/production/MONSTRE_DE_POCHE:resources" com.esiea.monstredepoche.Main gui
 ```
 
 ### Lancer l'interface console (par défaut)
@@ -197,6 +123,7 @@ Si vous lancez sans argument, le programme vous demandera de choisir :
 
 ## Notes importantes
 
+- **Le SDK JavaFX est inclus** : Aucune installation manuelle nécessaire
 - **Les affichages console sont conservés** : Toutes les actions de combat s'affichent également dans la console
 - **Le code existant n'est pas modifié** : L'interface JavaFX utilise les contrôleurs existants sans les modifier
 - **Structure préservée** : Tous les fichiers GUI sont dans le package `gui/` pour séparer l'interface du code métier
@@ -229,21 +156,23 @@ resources/styles/
 ### Erreur "javafx cannot be resolved"
 
 JavaFX n'est pas dans le classpath. Vérifiez que :
-- Les JARs JavaFX sont bien dans le dossier `lib/` du projet
-- Le fichier `.vscode/settings.json` référence `lib/**/*.jar`
-- Vous avez rechargé VS Code après avoir ajouté les JARs
+- Le dossier `javafx-sdk-17.0.17/lib/` existe et contient les JARs JavaFX
+- Le fichier `.vscode/settings.json` référence `javafx-sdk-17.0.17/lib/**/*.jar` (si vous utilisez VS Code)
+- Vous avez rechargé VS Code après avoir modifié les paramètres
 
 ### Erreur "Error initializing QuantumRenderer: no suitable pipeline found"
 
 Cette erreur indique que les DLL natives JavaFX ne sont pas trouvées. Solutions :
-- **Windows** : Exécutez `.\setup-javafx-native.ps1` pour copier les DLL dans `bin/`
-- Vérifiez que le dossier `bin/` contient des fichiers `.dll`
-- Le script `launch-gui.ps1` ajoute automatiquement `bin/` au PATH
+- **Windows** : Vérifiez que le dossier `javafx-sdk-17.0.17/bin/` contient des fichiers `.dll`
+- **Linux** : Vérifiez que le dossier `javafx-sdk-17.0.17/bin/` contient des fichiers `.so`
+- Le script `launch-gui.ps1` (Windows) ou `launch-gui.sh` (Linux) ajoute automatiquement le dossier `bin/` au PATH/LD_LIBRARY_PATH
 
 ### L'interface ne se lance pas
 
 Vérifiez que :
-- Les JARs JavaFX sont dans `lib/` et les DLL dans `bin/`
+- Le SDK JavaFX est présent dans `javafx-sdk-17.0.17/`
+- Les JARs JavaFX sont dans `javafx-sdk-17.0.17/lib/`
+- Les DLL natives sont dans `javafx-sdk-17.0.17/bin/` (Windows) ou `.so` (Linux)
 - Le projet est compilé (`out/production/MONSTRE_DE_POCHE` existe)
 - Vous utilisez Java 11 ou supérieur
 - Les modules JavaFX sont bien ajoutés (`--add-modules javafx.controls,javafx.fxml,javafx.graphics`)
@@ -251,3 +180,23 @@ Vérifiez que :
 ### Les styles ne s'appliquent pas
 
 Vérifiez que le fichier `pokemon-style.css` est bien dans `resources/styles/` et que le chemin est correct dans le code.
+
+## Installation manuelle (si nécessaire)
+
+Si pour une raison quelconque le SDK JavaFX n'est pas inclus dans le projet :
+
+1. **Télécharger JavaFX SDK** depuis [https://openjfx.io/](https://openjfx.io/)
+   - Choisissez la version compatible avec votre JDK (Java 11+ recommandé)
+   - Téléchargez le SDK pour votre système d'exploitation (Windows ou Linux)
+
+2. **Extraire le SDK** dans le dossier du projet :
+   - Renommez le dossier extrait en `javafx-sdk-17.0.17`
+   - Placez-le à la racine du projet
+
+3. **Vérifier la structure** :
+   ```
+   MONSTRE_DE_POCHE/
+   ├── javafx-sdk-17.0.17/
+   │   ├── lib/     ← Doit contenir les JARs
+   │   └── bin/     ← Doit contenir les DLL/.so
+   ```
