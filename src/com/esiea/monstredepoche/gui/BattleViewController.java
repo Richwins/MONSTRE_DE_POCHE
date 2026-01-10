@@ -1336,17 +1336,32 @@ public class BattleViewController {
         menuButton.setPrefHeight(60);
         menuButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         menuButton.setOnAction(e -> {
+            victoryDialog.setResult(null);
             victoryDialog.close();
-            app.showMainMenu();
         });
         
-        content.getChildren().addAll(victoryTitle, winnerLabel, victoryMessage, statsBox, menuButton);
+        // Bouton fermer
+        Button closeButton = createActionButton("❌ Fermer", "#8A8A8A", "#A0A0A0");
+        closeButton.setPrefWidth(200);
+        closeButton.setPrefHeight(50);
+        closeButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        closeButton.setOnAction(e -> {
+            victoryDialog.setResult(null);
+            victoryDialog.close();
+        });
+        
+        HBox buttonsBox = new HBox(15);
+        buttonsBox.setAlignment(Pos.CENTER);
+        buttonsBox.getChildren().addAll(menuButton, closeButton);
+        
+        content.getChildren().addAll(victoryTitle, winnerLabel, victoryMessage, statsBox, buttonsBox);
         
         victoryDialog.getDialogPane().setContent(content);
         victoryDialog.getDialogPane().getButtonTypes().clear(); // Retirer les boutons par défaut
         
-        // Afficher le dialogue
+        // Afficher le dialogue et retourner au menu après fermeture
         victoryDialog.showAndWait();
+        app.showMainMenu();
     }
     
     private void showAlert(String title, String message) {
