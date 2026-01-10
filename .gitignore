@@ -16,6 +16,7 @@
 *.nar
 *.ear
 *.zip
+!demo_video.zip
 *.tar.gz
 *.rar
 
