@@ -88,6 +88,27 @@ public class Player {
         return available;
     }
     
+    /**
+     * Vérifie si le monstre actif est KO et le remplace automatiquement par un autre monstre vivant
+     * @return true si un nouveau monstre a été activé, false sinon
+     */
+    public boolean checkAndReplaceKOActiveMonster() {
+        // Si le monstre actif est null ou KO, chercher un remplaçant
+        if (activeMonster == null || !activeMonster.isAlive()) {
+            // Chercher le premier monstre vivant disponible
+            for (Monster monster : monsters) {
+                if (monster.isAlive()) {
+                    activeMonster = monster;
+                    return true;
+                }
+            }
+            // Aucun monstre vivant trouvé
+            activeMonster = null;
+            return false;
+        }
+        return false;
+    }
+    
     // Getters et Setters
     public String getName() {
         return name;

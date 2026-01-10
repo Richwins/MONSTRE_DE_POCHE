@@ -109,6 +109,10 @@ public class TurnManager {
         // Appliquer les effets de statut
         applyStatusEffects();
         
+        // Vérifier et remplacer automatiquement les monstres actifs KO
+        field.getPlayer1().checkAndReplaceKOActiveMonster();
+        field.getPlayer2().checkAndReplaceKOActiveMonster();
+        
         // Mettre à jour le terrain
         field.updateTerrain();
         

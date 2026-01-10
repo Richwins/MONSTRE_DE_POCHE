@@ -151,6 +151,9 @@ public class Bot {
         int itemIndex = RandomGenerator.randomInRange(0, items.size() - 1);
         action.targetIndex = itemIndex;
         
+        // Utiliser l'objet sur le monstre actif (comme dans la version console)
+        action.targetMonster = botPlayer.getActiveMonster();
+        
         System.out.println("🤖 " + name + " choisit d'utiliser un objet : " + items.get(itemIndex).getName());
         return action;
     }

@@ -14,9 +14,15 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
+import javafx.animation.KeyFrame;
+import javafx.util.Duration;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Contrôleur pour la vue de combat complète.
@@ -38,8 +44,6 @@ public class BattleViewController {
     private VBox player2Area;
     private VBox centerArea;
     private VBox actionArea;
-    private ScrollPane logArea;
-    private TextArea logTextArea;
     private Label terrainLabel;
     private Label statusLabel;
     private Label currentPlayerLabel;
@@ -93,28 +97,6 @@ public class BattleViewController {
         // Zone joueur 2 (droite)
         player2Area = createPlayerArea("Joueur 2", Color.web("#0D1F12"));
         
-        // Zone de log (messages de combat)
-        logTextArea = new TextArea();
-        logTextArea.setEditable(false);
-        logTextArea.setWrapText(true);
-        logTextArea.setFont(Font.font("Consolas", 12));
-        logTextArea.setStyle(
-            "-fx-background-color: #1A1F1E;" +
-            "-fx-control-inner-background: #1A1F1E;" +
-            "-fx-text-fill: #A8FF9E;" +
-            "-fx-border-color: #39FF14;" +
-            "-fx-border-width: 2;" +
-            "-fx-border-radius: 5;"
-        );
-        logTextArea.setPrefRowCount(8);
-        
-        logArea = new ScrollPane(logTextArea);
-        logArea.setFitToWidth(true);
-        logArea.setStyle(
-            "-fx-background: #1A1F1E;" +
-            "-fx-background-color: #1A1F1E;"
-        );
-        
         // Zone d'actions (bas)
         actionArea = createActionArea();
         
@@ -125,13 +107,8 @@ public class BattleViewController {
         HBox.setHgrow(centerArea, Priority.ALWAYS);
         HBox.setHgrow(player2Area, Priority.ALWAYS);
         
-        // Layout vertical : joueurs + log
-        VBox mainContent = new VBox(15);
-        mainContent.getChildren().addAll(playersBox, logArea);
-        VBox.setVgrow(playersBox, Priority.ALWAYS);
-        VBox.setVgrow(logArea, Priority.NEVER);
-        
-        root.setCenter(mainContent);
+        // Layout principal : joueurs uniquement
+        root.setCenter(playersBox);
         root.setBottom(actionArea);
         
         // Mettre à jour l'affichage
@@ -186,14 +163,10 @@ public class BattleViewController {
             "-fx-border-radius: 15;"
         );
         
-        Label actionLabel = new Label("Actions disponibles :");
-        actionLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
-        actionLabel.setTextFill(Color.web("#A8FF9E")); // Vert Clair Texte
-        
         HBox buttonsBox = new HBox(15);
         buttonsBox.setAlignment(Pos.CENTER);
         
-        Button attackBtn = createStyledButton("⚔️ Attaquer", "#39FF14", "#00FF41");
+        Button attackBtn = createStyledButton("⚔️ Attaquer", "#1A5F2E", "#2D7F4F");
         attackBtn.setPrefWidth(180);
         attackBtn.setPrefHeight(60);
         attackBtn.setOnAction(e -> handleAttack());
@@ -217,19 +190,25 @@ public class BattleViewController {
         actionButtons = new Button[]{attackBtn, itemBtn, switchBtn};
         
         buttonsBox.getChildren().addAll(attackBtn, itemBtn, switchBtn, menuBtn);
-        area.getChildren().addAll(actionLabel, buttonsBox);
+        area.getChildren().add(buttonsBox);
         
         return area;
     }
     
     private Button[] actionButtons; // Références aux boutons d'action pour les activer/désactiver
     
+    // Stockage des références aux barres de vie pour animation
+    private Map<Monster, ProgressBar> monsterHpBars = new HashMap<>();
+    private Map<Monster, Label> monsterHpLabels = new HashMap<>();
+    
     private Button createStyledButton(String text, String color1, String color2) {
         Button button = new Button(text);
         button.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         
         String rgb1 = hexToRgb(color1);
-        String rgb2 = hexToRgb(color2);
+        // Créer une couleur plus sombre pour le hover (70% de la couleur de base)
+        String darkColor = darkenColor(color1, 0.7);
+        String rgbDark = hexToRgb(darkColor);
         
         button.setStyle(
             "-fx-background-color: " + color1 + ";" +
@@ -244,14 +223,15 @@ public class BattleViewController {
         );
         
         button.setOnMouseEntered(e -> {
+            // Utiliser la couleur assombrie au hover
             button.setStyle(
-                "-fx-background-color: " + color2 + ";" +
+                "-fx-background-color: " + darkColor + ";" +
                 "-fx-text-fill: #FFFFFF;" +
                 "-fx-background-radius: 10;" +
-                "-fx-border-color: " + color2 + ";" +
+                "-fx-border-color: " + darkColor + ";" +
                 "-fx-border-width: 2;" +
                 "-fx-border-radius: 10;" +
-                "-fx-effect: dropshadow(gaussian, " + rgb2 + ", 25, 0, 0, 0), " +
+                "-fx-effect: dropshadow(gaussian, " + rgbDark + ", 25, 0, 0, 0), " +
                 "dropshadow(gaussian, rgba(0,0,0,0.7), 8, 0, 0, 3);" +
                 "-fx-cursor: hand;"
             );
@@ -280,6 +260,94 @@ public class BattleViewController {
         int g = Integer.parseInt(hex.substring(2, 4), 16);
         int b = Integer.parseInt(hex.substring(4, 6), 16);
         return "rgba(" + r + "," + g + "," + b + ",0.6)";
+    }
+    
+    /**
+     * Assombrit une couleur hexadécimale
+     * @param hex La couleur en hexadécimal (avec ou sans #)
+     * @param factor Le facteur d'assombrissement (0.0 à 1.0, plus petit = plus sombre)
+     * @return La couleur assombrie en hexadécimal
+     */
+    private String darkenColor(String hex, double factor) {
+        // Enlever le #
+        hex = hex.replace("#", "");
+        
+        // Convertir hex en RGB
+        int r = Integer.parseInt(hex.substring(0, 2), 16);
+        int g = Integer.parseInt(hex.substring(2, 4), 16);
+        int b = Integer.parseInt(hex.substring(4, 6), 16);
+        
+        // Assombrir en multipliant par le facteur
+        r = (int) (r * factor);
+        g = (int) (g * factor);
+        b = (int) (b * factor);
+        
+        // S'assurer que les valeurs restent dans la plage 0-255
+        r = Math.max(0, Math.min(255, r));
+        g = Math.max(0, Math.min(255, g));
+        b = Math.max(0, Math.min(255, b));
+        
+        // Retourner en format hexadécimal
+        return String.format("#%02X%02X%02X", r, g, b);
+    }
+    
+    /**
+     * Crée un bouton stylisé pour les popups d'action
+     */
+    private Button createActionButton(String text, String color1, String color2) {
+        Button button = new Button(text);
+        button.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        
+        String rgb1 = hexToRgb(color1);
+        // Créer une couleur plus sombre pour le hover (70% de la couleur de base)
+        String darkColor = darkenColor(color1, 0.7);
+        String rgbDark = hexToRgb(darkColor);
+        
+        button.setStyle(
+            "-fx-background-color: " + color1 + ";" +
+            "-fx-text-fill: #FFFFFF;" +
+            "-fx-background-radius: 10;" +
+            "-fx-border-color: " + color1 + ";" +
+            "-fx-border-width: 2;" +
+            "-fx-border-radius: 10;" +
+            "-fx-effect: dropshadow(gaussian, " + rgb1 + ", 15, 0, 0, 0), " +
+            "dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);" +
+            "-fx-cursor: hand;" +
+            "-fx-wrap-text: true;"
+        );
+        
+        button.setOnMouseEntered(e -> {
+            // Utiliser la couleur assombrie au hover
+            button.setStyle(
+                "-fx-background-color: " + darkColor + ";" +
+                "-fx-text-fill: #FFFFFF;" +
+                "-fx-background-radius: 10;" +
+                "-fx-border-color: " + darkColor + ";" +
+                "-fx-border-width: 2;" +
+                "-fx-border-radius: 10;" +
+                "-fx-effect: dropshadow(gaussian, " + rgbDark + ", 25, 0, 0, 0), " +
+                "dropshadow(gaussian, rgba(0,0,0,0.7), 8, 0, 0, 3);" +
+                "-fx-cursor: hand;" +
+                "-fx-wrap-text: true;"
+            );
+        });
+        
+        button.setOnMouseExited(e -> {
+            button.setStyle(
+                "-fx-background-color: " + color1 + ";" +
+                "-fx-text-fill: #FFFFFF;" +
+                "-fx-background-radius: 10;" +
+                "-fx-border-color: " + color1 + ";" +
+                "-fx-border-width: 2;" +
+                "-fx-border-radius: 10;" +
+                "-fx-effect: dropshadow(gaussian, " + rgb1 + ", 15, 0, 0, 0), " +
+                "dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);" +
+                "-fx-cursor: hand;" +
+                "-fx-wrap-text: true;"
+            );
+        });
+        
+        return button;
     }
     
     private void handleAttack() {
@@ -354,7 +422,7 @@ public class BattleViewController {
     }
     
     private void showAttackSelectionDialog(Monster monster) {
-        Dialog<Integer> dialog = createStyledDialog("Sélection d'attaque", "Choisissez une attaque pour " + monster.getName());
+        Dialog<Integer> dialog = createStyledDialog("⚔️ Sélection d'attaque", "Choisissez une attaque pour " + monster.getName());
         
         List<Attack> specialAttacks = new ArrayList<>();
         AttackType monsterAttackType = convertMonsterTypeToAttackType(monster.getType());
@@ -365,68 +433,83 @@ public class BattleViewController {
             }
         }
         
-        VBox content = new VBox(10);
-        content.setPadding(new Insets(10));
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        content.setAlignment(Pos.CENTER);
         
-        ListView<Attack> attackList = new ListView<>();
-        attackList.setStyle(
-            "-fx-background-color: #1A1F1E;" +
-            "-fx-text-fill: #A8FF9E;" +
-            "-fx-border-color: #39FF14;"
-        );
+        Label titleLabel = new Label("Attaques disponibles :");
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        titleLabel.setTextFill(Color.web("#1A5F2E"));
+        content.getChildren().add(titleLabel);
         
-        for (Attack attack : specialAttacks) {
-            attackList.getItems().add(attack);
-        }
+        // Grille pour les boutons d'attaques spéciales
+        GridPane attacksGrid = new GridPane();
+        attacksGrid.setHgap(15);
+        attacksGrid.setVgap(15);
+        attacksGrid.setAlignment(Pos.CENTER);
+        attacksGrid.setPadding(new Insets(10));
         
-        attackList.setCellFactory(param -> new ListCell<Attack>() {
-            @Override
-            protected void updateItem(Attack attack, boolean empty) {
-                super.updateItem(attack, empty);
-                if (empty || attack == null) {
-                    setText(null);
-                    setStyle("-fx-background-color: #1A1F1E;");
-                } else {
-                    setText(attack.getName() + " | Puissance: " + attack.getPower() + 
-                           " | Utilisations: " + attack.getNbUse() + "/" + attack.getMaxUses());
-                    setStyle(
-                        "-fx-background-color: #1C2B21;" +
-                        "-fx-text-fill: #A8FF9E;" +
-                        "-fx-padding: 5;"
-                    );
-                }
+        int col = 0;
+        int row = 0;
+        for (int i = 0; i < specialAttacks.size(); i++) {
+            Attack attack = specialAttacks.get(i);
+            int attackIndex = monster.getAttacks().indexOf(attack);
+            
+            Button attackBtn = createActionButton(
+                attack.getName() + "\n⚡ Puissance: " + attack.getPower() + 
+                "\n📊 " + attack.getNbUse() + "/" + attack.getMaxUses() + " utilisations",
+                "#1A5F2E",
+                "#2D7F4F"
+            );
+            attackBtn.setPrefWidth(200);
+            attackBtn.setPrefHeight(100);
+            attackBtn.setOnAction(e -> {
+                dialog.setResult(attackIndex);
+                dialog.close();
+            });
+            
+            attacksGrid.add(attackBtn, col, row);
+            col++;
+            if (col >= 2) {
+                col = 0;
+                row++;
             }
-        });
-        
-        ButtonType normalAttackBtn = new ButtonType("Attaque normale (mains nues)", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelBtn = new ButtonType("Annuler", ButtonBar.ButtonData.CANCEL_CLOSE);
+        }
         
         if (!specialAttacks.isEmpty()) {
-            content.getChildren().addAll(
-                new Label("Attaques spéciales disponibles :"),
-                attackList
-            );
-            dialog.getDialogPane().getButtonTypes().addAll(normalAttackBtn, cancelBtn);
-        } else {
-            content.getChildren().add(new Label("Aucune attaque spéciale disponible.\nUtilisez l'attaque normale."));
-            dialog.getDialogPane().getButtonTypes().addAll(normalAttackBtn, cancelBtn);
+            content.getChildren().add(attacksGrid);
         }
         
-        dialog.getDialogPane().setContent(content);
-        
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == normalAttackBtn) {
-                return -1;
-            } else if (dialogButton == cancelBtn) {
-                return null;
-            } else {
-                Attack selected = attackList.getSelectionModel().getSelectedItem();
-                if (selected != null) {
-                    return monster.getAttacks().indexOf(selected);
-                }
-            }
-            return null;
+        // Bouton attaque normale
+        Button normalAttackBtn = createActionButton(
+            "👊 Attaque Normale\n(mains nues)",
+            "#FF6B35",
+            "#FF8C42"
+        );
+        normalAttackBtn.setPrefWidth(250);
+        normalAttackBtn.setPrefHeight(80);
+        normalAttackBtn.setOnAction(e -> {
+            dialog.setResult(-1);
+            dialog.close();
         });
+        
+        // Bouton annuler
+        Button cancelBtn = createActionButton("❌ Annuler", "#8A8A8A", "#A0A0A0");
+        cancelBtn.setPrefWidth(150);
+        cancelBtn.setPrefHeight(50);
+        cancelBtn.setOnAction(e -> {
+            dialog.setResult(null);
+            dialog.close();
+        });
+        
+        HBox bottomButtons = new HBox(15);
+        bottomButtons.setAlignment(Pos.CENTER);
+        bottomButtons.getChildren().addAll(normalAttackBtn, cancelBtn);
+        
+        content.getChildren().addAll(bottomButtons);
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().clear(); // Retirer les boutons par défaut
         
         dialog.showAndWait().ifPresent(attackIndex -> {
             if (attackIndex != null) {
@@ -437,109 +520,93 @@ public class BattleViewController {
     
     private void showItemSelectionDialog() {
         Dialog<ItemSelectionResult> dialog = new Dialog<>();
-        dialog.setTitle("Sélection d'objet");
-        dialog.setHeaderText("Choisissez un objet à utiliser");
+        dialog.setTitle("💊 Sélection d'objet");
+        
+        Monster activeMonster = currentPlayer.getActiveMonster();
+        if (activeMonster == null) {
+            showAlert("Erreur", "Aucun monstre actif disponible.");
+            return;
+        }
+        
+        dialog.setHeaderText("Choisissez un objet à utiliser sur " + activeMonster.getName() + " (monstre actif)");
         
         // Style dark/neon pour le dialogue
         dialog.getDialogPane().setStyle(
             "-fx-background-color: #1A1F1E;" +
-            "-fx-border-color: #39FF14;" +
+            "-fx-border-color: #00B4FF;" +
             "-fx-border-width: 2;"
         );
         
-        VBox content = new VBox(10);
-        content.setPadding(new Insets(10));
+        VBox content = new VBox(20);
+        content.setPadding(new Insets(20));
+        content.setAlignment(Pos.CENTER);
         
-        ListView<Item> itemList = new ListView<>();
-        itemList.setStyle(
-            "-fx-background-color: #1A1F1E;" +
-            "-fx-text-fill: #A8FF9E;" +
-            "-fx-border-color: #39FF14;"
-        );
+        // Afficher le monstre actif
+        Label monsterInfoLabel = new Label("⚡ Monstre actif : " + activeMonster.getName() + 
+            " | ❤️ PV: " + activeMonster.getHp() + "/" + activeMonster.getMaxHp());
+        monsterInfoLabel.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        monsterInfoLabel.setTextFill(Color.web("#00FFFF"));
         
-        for (Item item : currentPlayer.getItems()) {
-            itemList.getItems().add(item);
+        // Section : Sélection de l'objet
+        Label itemTitleLabel = new Label("Choisissez un objet :");
+        itemTitleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        itemTitleLabel.setTextFill(Color.web("#00B4FF"));
+        
+        GridPane itemsGrid = new GridPane();
+        itemsGrid.setHgap(15);
+        itemsGrid.setVgap(15);
+        itemsGrid.setAlignment(Pos.CENTER);
+        itemsGrid.setPadding(new Insets(10));
+        
+        int col = 0;
+        int row = 0;
+        for (int i = 0; i < currentPlayer.getItems().size(); i++) {
+            Item item = currentPlayer.getItems().get(i);
+            final int itemIndex = i;
+            
+            Button itemBtn = createActionButton(
+                item.getName() + "\n" + item.getDescription(),
+                "#00B4FF",
+                "#00FFFF"
+            );
+            itemBtn.setPrefWidth(200);
+            itemBtn.setPrefHeight(100);
+            
+            // Appliquer directement l'objet au monstre actif
+            itemBtn.setOnAction(e -> {
+                dialog.setResult(new ItemSelectionResult(
+                    itemIndex,
+                    activeMonster
+                ));
+                dialog.close();
+            });
+            
+            itemsGrid.add(itemBtn, col, row);
+            col++;
+            if (col >= 2) {
+                col = 0;
+                row++;
+            }
         }
         
-        itemList.setCellFactory(param -> new ListCell<Item>() {
-            @Override
-            protected void updateItem(Item item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("-fx-background-color: #1A1F1E;");
-                } else {
-                    setText(item.getName() + " - " + item.getDescription());
-                    setStyle(
-                        "-fx-background-color: #1C2B21;" +
-                        "-fx-text-fill: #A8FF9E;" +
-                        "-fx-padding: 5;"
-                    );
-                }
-            }
-        });
-        
-        // Sélection du monstre cible
-        Label targetLabel = new Label("Choisissez le monstre cible :");
-        targetLabel.setTextFill(Color.web("#A8FF9E"));
-        
-        ListView<Monster> monsterList = new ListView<>();
-        monsterList.setStyle(
-            "-fx-background-color: #1A1F1E;" +
-            "-fx-text-fill: #A8FF9E;" +
-            "-fx-border-color: #39FF14;"
-        );
-        
-        for (Monster monster : currentPlayer.getMonsters()) {
-            if (monster.isAlive()) {
-                monsterList.getItems().add(monster);
-            }
-        }
-        
-        monsterList.setCellFactory(param -> new ListCell<Monster>() {
-            @Override
-            protected void updateItem(Monster monster, boolean empty) {
-                super.updateItem(monster, empty);
-                if (empty || monster == null) {
-                    setText(null);
-                    setStyle("-fx-background-color: #1A1F1E;");
-                } else {
-                    String active = monster == currentPlayer.getActiveMonster() ? " (ACTIF)" : "";
-                    setText(monster.getName() + " | PV: " + monster.getHp() + "/" + monster.getMaxHp() + active);
-                    setStyle(
-                        "-fx-background-color: #1C2B21;" +
-                        "-fx-text-fill: #A8FF9E;" +
-                        "-fx-padding: 5;"
-                    );
-                }
-            }
+        // Bouton annuler
+        Button cancelBtn = createActionButton("❌ Annuler", "#8A8A8A", "#A0A0A0");
+        cancelBtn.setPrefWidth(150);
+        cancelBtn.setPrefHeight(50);
+        cancelBtn.setOnAction(e -> {
+            dialog.setResult(null);
+            dialog.close();
         });
         
         content.getChildren().addAll(
-            new Label("Objet :"),
-            itemList,
-            targetLabel,
-            monsterList
+            monsterInfoLabel,
+            itemTitleLabel,
+            itemsGrid,
+            cancelBtn
         );
         
-        ButtonType useBtn = new ButtonType("Utiliser", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelBtn = new ButtonType("Annuler", ButtonBar.ButtonData.CANCEL_CLOSE);
-        dialog.getDialogPane().getButtonTypes().addAll(useBtn, cancelBtn);
         dialog.getDialogPane().setContent(content);
-        
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == useBtn) {
-                Item selectedItem = itemList.getSelectionModel().getSelectedItem();
-                Monster selectedMonster = monsterList.getSelectionModel().getSelectedItem();
-                if (selectedItem != null && selectedMonster != null) {
-                    return new ItemSelectionResult(
-                        currentPlayer.getItems().indexOf(selectedItem),
-                        selectedMonster
-                    );
-                }
-            }
-            return null;
-        });
+        dialog.getDialogPane().getButtonTypes().clear(); // Retirer les boutons par défaut
         
         dialog.showAndWait().ifPresent(result -> {
             if (result != null) {
@@ -562,55 +629,71 @@ public class BattleViewController {
     }
     
     private void showMonsterSelectionDialog(List<Monster> available) {
-        Dialog<Integer> dialog = createStyledDialog("Changement de monstre", "Choisissez un monstre à envoyer au combat");
+        Dialog<Integer> dialog = createStyledDialog("🔄 Changement de monstre", "Choisissez un monstre à envoyer au combat");
         
-        ListView<Monster> monsterList = new ListView<>();
-        monsterList.setStyle(
-            "-fx-background-color: #1A1F1E;" +
-            "-fx-text-fill: #A8FF9E;" +
-            "-fx-border-color: #39FF14;"
-        );
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        content.setAlignment(Pos.CENTER);
         
+        Label titleLabel = new Label("Monstres disponibles :");
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        titleLabel.setTextFill(Color.web("#8B00FF"));
+        content.getChildren().add(titleLabel);
+        
+        GridPane monstersGrid = new GridPane();
+        monstersGrid.setHgap(15);
+        monstersGrid.setVgap(15);
+        monstersGrid.setAlignment(Pos.CENTER);
+        monstersGrid.setPadding(new Insets(10));
+        
+        int col = 0;
+        int row = 0;
         for (Monster monster : available) {
             if (monster != currentPlayer.getActiveMonster() && monster.isAlive()) {
-                monsterList.getItems().add(monster);
+                int monsterIndex = currentPlayer.getMonsters().indexOf(monster);
+                
+                String typeDisplay = gameController.getMonsterTypeDisplay(monster);
+                double hpPercent = monster.getMaxHp() > 0 ? (double) monster.getHp() / monster.getMaxHp() : 0;
+                String hpStatus = hpPercent > 0.5 ? "❤️" : hpPercent > 0.25 ? "💛" : "💔";
+                
+                Button monsterBtn = createActionButton(
+                    monster.getName() + "\n" + typeDisplay + 
+                    "\n" + hpStatus + " PV: " + monster.getHp() + "/" + monster.getMaxHp() +
+                    "\n⚔️ ATK:" + monster.getAttack() + " 🛡️ DEF:" + monster.getDefense() + " ⚡ SPD:" + monster.getSpeed(),
+                    "#8B00FF",
+                    "#B026FF"
+                );
+                monsterBtn.setPrefWidth(220);
+                monsterBtn.setPrefHeight(120);
+                monsterBtn.setOnAction(e -> {
+                    dialog.setResult(monsterIndex);
+                    dialog.close();
+                });
+                
+                monstersGrid.add(monsterBtn, col, row);
+                col++;
+                if (col >= 2) {
+                    col = 0;
+                    row++;
+                }
             }
         }
         
-        monsterList.setCellFactory(param -> new ListCell<Monster>() {
-            @Override
-            protected void updateItem(Monster monster, boolean empty) {
-                super.updateItem(monster, empty);
-                if (empty || monster == null) {
-                    setText(null);
-                    setStyle("-fx-background-color: #1A1F1E;");
-                } else {
-                    String status = monster == currentPlayer.getActiveMonster() ? " (ACTIF)" : "";
-                    setText(monster.getName() + " | PV: " + monster.getHp() + "/" + monster.getMaxHp() + 
-                           " | Type: " + gameController.getMonsterTypeDisplay(monster) + status);
-                    setStyle(
-                        "-fx-background-color: #1C2B21;" +
-                        "-fx-text-fill: #A8FF9E;" +
-                        "-fx-padding: 5;"
-                    );
-                }
-            }
+        content.getChildren().add(monstersGrid);
+        
+        // Bouton annuler
+        Button cancelBtn = createActionButton("❌ Annuler", "#8A8A8A", "#A0A0A0");
+        cancelBtn.setPrefWidth(150);
+        cancelBtn.setPrefHeight(50);
+        cancelBtn.setOnAction(e -> {
+            dialog.setResult(null);
+            dialog.close();
         });
         
-        ButtonType switchBtn = new ButtonType("Changer", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancelBtn = new ButtonType("Annuler", ButtonBar.ButtonData.CANCEL_CLOSE);
-        dialog.getDialogPane().getButtonTypes().addAll(switchBtn, cancelBtn);
-        dialog.getDialogPane().setContent(monsterList);
+        content.getChildren().add(cancelBtn);
         
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == switchBtn) {
-                Monster selected = monsterList.getSelectionModel().getSelectedItem();
-                if (selected != null) {
-                    return currentPlayer.getMonsters().indexOf(selected);
-                }
-            }
-            return null;
-        });
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().clear(); // Retirer les boutons par défaut
         
         dialog.showAndWait().ifPresent(monsterIndex -> {
             if (monsterIndex != null) {
@@ -645,7 +728,6 @@ public class BattleViewController {
         action.attackIndex = attackIndex;
         
         battleController.getTurnManager().addAction(action);
-        addLogMessage("⚔️ " + currentPlayer.getName() + " choisit d'attaquer !");
         
         nextPlayerOrProcessTurn();
     }
@@ -662,8 +744,6 @@ public class BattleViewController {
         action.targetMonster = targetMonster; // Définir le monstre cible
         
         battleController.getTurnManager().addAction(action);
-        Item item = currentPlayer.getItems().get(itemIndex);
-        addLogMessage("💊 " + currentPlayer.getName() + " utilise " + item.getName() + " sur " + targetMonster.getName() + " !");
         
         nextPlayerOrProcessTurn();
     }
@@ -679,8 +759,6 @@ public class BattleViewController {
         action.targetIndex = monsterIndex;
         
         battleController.getTurnManager().addAction(action);
-        Monster selected = currentPlayer.getMonsters().get(monsterIndex);
-        addLogMessage("🔄 " + currentPlayer.getName() + " change de monstre : " + selected.getName() + " !");
         
         nextPlayerOrProcessTurn();
     }
@@ -716,27 +794,33 @@ public class BattleViewController {
     
     private void executeTurn() {
         Platform.runLater(() -> {
-            addLogMessage("\n" + "=".repeat(50));
-            addLogMessage("=== EXÉCUTION DU TOUR ===");
-            addLogMessage("=".repeat(50));
-            
-            // Afficher l'état avant le tour
-            displayGameStateInLog();
+            // Stocker les PV avant le tour pour l'animation
+            Map<Monster, Integer> hpBefore = new HashMap<>();
+            for (Monster m : player1.getMonsters()) {
+                hpBefore.put(m, m.getHp());
+            }
+            for (Monster m : player2.getMonsters()) {
+                hpBefore.put(m, m.getHp());
+            }
             
             battleController.processTurn();
             
-            // Afficher l'état après le tour
-            addLogMessage("\n--- État après le tour ---");
-            displayGameStateInLog();
+            // Mettre à jour l'affichage pour avoir les nouvelles références des barres
+            updateDisplay();
+            
+            // Attendre un court instant pour que l'affichage soit mis à jour
+            PauseTransition updatePause = new PauseTransition(Duration.millis(50));
+            updatePause.setOnFinished(e -> {
+                // Animer la progression des barres de vie
+                animateHpBars(hpBefore);
+            });
+            updatePause.play();
             
             // Vérifier le gagnant
             Player winner = battleController.checkWinner();
             if (winner != null) {
-                addLogMessage("\n" + "=".repeat(50));
-                addLogMessage("🎉 " + winner.getName().toUpperCase() + " REMPORTE LA VICTOIRE !");
-                addLogMessage("=".repeat(50));
-                showAlert("Victoire !", winner.getName() + " remporte la victoire !");
-                app.showMainMenu();
+                // Afficher l'interface de victoire améliorée
+                showVictoryScreen(winner);
                 return;
             }
             
@@ -745,8 +829,10 @@ public class BattleViewController {
             currentPlayer = player1;
             currentPlayerLabel.setText("Tour de " + player1.getName());
             statusLabel.setText("En attente de l'action de " + player1.getName());
+            statusLabel.setTextFill(Color.web("#E0E0E0")); // Remettre la couleur normale
             updateDisplay();
             updateActionButtons();
+            setActionButtonsEnabled(true); // Réactiver les boutons
         });
     }
     
@@ -814,18 +900,108 @@ public class BattleViewController {
         
         Platform.runLater(() -> {
             com.esiea.monstredepoche.controllers.Bot bot = gameController.getBot();
-            addLogMessage("🤖 Tour de " + bot.getName());
             
-            TurnManager.Action action = bot.makeDecision();
+            // Désactiver les boutons pendant que le bot réfléchit
+            setActionButtonsEnabled(false);
+            statusLabel.setText("🤖 " + bot.getName() + " réfléchit...");
+            updateDisplay();
             
-            if (action != null) {
-                battleController.getTurnManager().addAction(action);
-                executeTurn();
-            } else {
-                addLogMessage("🤖 " + bot.getName() + " ne peut pas agir.");
-                executeTurn();
-            }
+            // Afficher que le bot réfléchit
+            addLogMessage("\n🤖 === Tour de " + bot.getName() + " ===");
+            
+            // Créer un délai court pour montrer que le bot réfléchit
+            PauseTransition pause = new PauseTransition(Duration.millis(800));
+            pause.setOnFinished(e -> {
+                Platform.runLater(() -> {
+                    TurnManager.Action action = bot.makeDecision();
+                    
+                    if (action != null) {
+                        // Afficher l'action du bot de manière visible
+                        String actionDescription = getBotActionDescription(action, bot);
+                        addLogMessage("🤖 " + bot.getName() + " : " + actionDescription);
+                        statusLabel.setText("🤖 " + bot.getName() + " : " + actionDescription);
+                        statusLabel.setTextFill(Color.web("#FF6B35")); // Orange pour le bot
+                        updateDisplay();
+                        
+                        battleController.getTurnManager().addAction(action);
+                        
+                        // Attendre un peu pour que l'utilisateur voie l'action du bot
+                        PauseTransition showAction = new PauseTransition(Duration.millis(1200));
+                        showAction.setOnFinished(e2 -> {
+                            Platform.runLater(() -> {
+                                executeTurn();
+                            });
+                        });
+                        showAction.play();
+                    } else {
+                        statusLabel.setText("🤖 " + bot.getName() + " ne peut pas agir.");
+                        updateDisplay();
+                        
+                        // Attendre un peu avant d'exécuter le tour
+                        PauseTransition showAction = new PauseTransition(Duration.millis(800));
+                        showAction.setOnFinished(e2 -> {
+                            Platform.runLater(() -> {
+                                executeTurn();
+                            });
+                        });
+                        showAction.play();
+                    }
+                });
+            });
+            pause.play();
         });
+    }
+    
+    /**
+     * Retourne une description textuelle de l'action du bot
+     */
+    private String getBotActionDescription(TurnManager.Action action, com.esiea.monstredepoche.controllers.Bot bot) {
+        if (action == null || bot == null || bot.getPlayer() == null) {
+            return "Aucune action";
+        }
+        
+        Player botPlayer = bot.getPlayer();
+        Monster activeMonster = botPlayer.getActiveMonster();
+        
+        switch (action.type) {
+            case ATTACK:
+                if (action.attackIndex == -1) {
+                    return "Attaque normale avec " + (activeMonster != null ? activeMonster.getName() : "son monstre");
+                } else {
+                    Attack attack = activeMonster != null && action.attackIndex < activeMonster.getAttacks().size() 
+                        ? activeMonster.getAttacks().get(action.attackIndex) 
+                        : null;
+                    if (attack != null) {
+                        return "Utilise " + attack.getName() + " avec " + activeMonster.getName();
+                    }
+                    return "Attaque avec " + (activeMonster != null ? activeMonster.getName() : "son monstre");
+                }
+            case USE_ITEM:
+                if (action.targetIndex >= 0 && action.targetIndex < botPlayer.getItems().size()) {
+                    Item item = botPlayer.getItems().get(action.targetIndex);
+                    Monster target = action.targetMonster != null ? action.targetMonster : activeMonster;
+                    return "Utilise " + item.getName() + " sur " + (target != null ? target.getName() : "son monstre");
+                }
+                return "Utilise un objet";
+            case SWITCH_MONSTER:
+                if (action.targetIndex >= 0 && action.targetIndex < botPlayer.getMonsters().size()) {
+                    Monster selected = botPlayer.getMonsters().get(action.targetIndex);
+                    return "Change de monstre : " + selected.getName();
+                }
+                return "Change de monstre";
+            default:
+                return "Action inconnue";
+        }
+    }
+    
+    /**
+     * Active ou désactive les boutons d'action
+     */
+    private void setActionButtonsEnabled(boolean enabled) {
+        if (actionButtons == null) return;
+        for (Button btn : actionButtons) {
+            btn.setDisable(!enabled);
+        }
     }
     
     private void updateDisplay() {
@@ -894,6 +1070,11 @@ public class BattleViewController {
             return;
         }
         
+        // Nettoyer les références des monstres qui ne sont plus dans l'équipe
+        List<Monster> currentMonsters = new ArrayList<>(player.getMonsters());
+        monsterHpBars.entrySet().removeIf(entry -> !currentMonsters.contains(entry.getKey()));
+        monsterHpLabels.entrySet().removeIf(entry -> !currentMonsters.contains(entry.getKey()));
+        
         for (int i = 0; i < player.getMonsters().size(); i++) {
             Monster monster = player.getMonsters().get(i);
             boolean isActive = monster == player.getActiveMonster();
@@ -903,13 +1084,13 @@ public class BattleViewController {
     }
     
     private VBox createMonsterCard(Monster monster, boolean isActive, int index) {
-        VBox card = new VBox(8);
-        card.setPadding(new Insets(12));
+        VBox card = new VBox(10);
+        card.setPadding(new Insets(15));
         card.setStyle(
             "-fx-background-color: " + (isActive ? "#0D1F12" : "#1A1F1E") + ";" +
             "-fx-border-color: " + (isActive ? "#39FF14" : "#1C2B21") + ";" +
             "-fx-border-width: " + (isActive ? "3" : "2") + ";" +
-            "-fx-border-radius: 8;"
+            "-fx-border-radius: 10;"
         );
         
         // En-tête avec index et nom
@@ -934,22 +1115,32 @@ public class BattleViewController {
             return card;
         }
         
-        // Barre de vie
+        // Conteneur pour la barre de vie avec label
+        VBox hpContainer = new VBox(5);
+        hpContainer.setAlignment(Pos.CENTER_LEFT);
+        
+        // Label PV au-dessus de la barre
+        Label hpLabel = new Label("PV: " + monster.getHp() + "/" + monster.getMaxHp());
+        hpLabel.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        hpLabel.setTextFill(Color.web("#50C878")); // Vert Émeraude
+        
+        // Stocker la référence pour la mise à jour
+        monsterHpLabels.put(monster, hpLabel);
+        
+        // Barre de vie améliorée
         double hpPercent = monster.getMaxHp() > 0 ? (double) monster.getHp() / monster.getMaxHp() : 0;
         ProgressBar hpBar = new ProgressBar(hpPercent);
-        hpBar.setPrefWidth(350);
-        hpBar.setPrefHeight(20);
+        hpBar.setPrefWidth(360);
+        hpBar.setPrefHeight(25);
+        hpBar.setMinHeight(25);
+        hpBar.setMaxHeight(25);
         
-        String hpColor = hpPercent > 0.5 ? "#50C878" : hpPercent > 0.25 ? "#FFE135" : "#FF3838";
-        hpBar.setStyle(
-            "-fx-accent: " + hpColor + ";" +
-            "-fx-background-color: #1C2B21;" +
-            "-fx-border-color: " + hpColor + ";"
-        );
+        // Stocker la référence pour l'animation (mise à jour à chaque recréation)
+        monsterHpBars.put(monster, hpBar);
         
-        Label hpLabel = new Label("PV: " + monster.getHp() + "/" + monster.getMaxHp());
-        hpLabel.setFont(Font.font("Arial", 12));
-        hpLabel.setTextFill(Color.web("#50C878")); // Vert Émeraude
+        updateHpBarStyle(hpBar, hpPercent);
+        
+        hpContainer.getChildren().addAll(hpLabel, hpBar);
         
         // Statistiques
         Label typeLabel = new Label("Type: " + gameController.getMonsterTypeDisplay(monster));
@@ -969,7 +1160,7 @@ public class BattleViewController {
             card.getChildren().add(statusLabel);
         }
         
-        card.getChildren().addAll(header, hpBar, hpLabel, typeLabel, statsLabel);
+        card.getChildren().addAll(header, hpContainer, typeLabel, statsLabel);
         
         return card;
     }
@@ -984,6 +1175,76 @@ public class BattleViewController {
                 return "☠️ EMPOISONNÉ";
             default:
                 return "";
+        }
+    }
+    
+    /**
+     * Met à jour le style de la barre de vie selon le pourcentage
+     * La partie remplie (PV restants) est toujours verte
+     */
+    private void updateHpBarStyle(ProgressBar hpBar, double hpPercent) {
+        // Toujours vert pour les PV restants
+        String hpColor = "#50C878"; // Vert pour les PV restants
+        hpBar.setStyle(
+            "-fx-accent: " + hpColor + ";" +
+            "-fx-background-color: #1C2B21;" + // Gris foncé pour la partie vide (PV perdus)
+            "-fx-border-color: " + hpColor + ";"
+        );
+    }
+    
+    /**
+     * Anime la progression des barres de vie après un changement de PV
+     */
+    private void animateHpBars(Map<Monster, Integer> hpBefore) {
+        // Animer toutes les barres de vie qui ont changé
+        for (Monster monster : monsterHpBars.keySet()) {
+            ProgressBar hpBar = monsterHpBars.get(monster);
+            Label hpLabel = monsterHpLabels.get(monster);
+            
+            if (hpBar == null || hpLabel == null) continue;
+            
+            Integer oldHp = hpBefore.get(monster);
+            int newHp = monster.getHp();
+            int maxHp = monster.getMaxHp();
+            
+            if (oldHp == null || oldHp == newHp) {
+                // Pas de changement, juste mettre à jour
+                double hpPercent = maxHp > 0 ? (double) newHp / maxHp : 0;
+                hpBar.setProgress(Math.max(0, Math.min(1, hpPercent)));
+                updateHpBarStyle(hpBar, hpPercent);
+                hpLabel.setText("PV: " + newHp + "/" + maxHp);
+                continue;
+            }
+            
+            // Animer la transition
+            final int startHp = oldHp;
+            final int endHp = newHp;
+            final int steps = Math.max(15, Math.abs(endHp - startHp)); // Au moins 15 étapes pour une animation fluide
+            final int totalDuration = 500; // 500ms pour l'animation complète
+            final int stepDuration = totalDuration / steps;
+            
+            Timeline timeline = new Timeline();
+            
+            for (int i = 0; i <= steps; i++) {
+                final int step = i;
+                double progress = (double) step / steps;
+                // Utiliser une fonction d'easing pour une animation plus naturelle
+                double easedProgress = 1 - Math.pow(1 - progress, 3); // Ease-out cubic
+                int currentHp = (int) (startHp + (endHp - startHp) * easedProgress);
+                
+                KeyFrame keyFrame = new KeyFrame(
+                    Duration.millis(step * stepDuration),
+                    e -> {
+                        double hpPercent = maxHp > 0 ? (double) currentHp / maxHp : 0;
+                        hpBar.setProgress(Math.max(0, Math.min(1, hpPercent)));
+                        updateHpBarStyle(hpBar, hpPercent);
+                        hpLabel.setText("PV: " + currentHp + "/" + maxHp);
+                    }
+                );
+                timeline.getKeyFrames().add(keyFrame);
+            }
+            
+            timeline.play();
         }
     }
     
@@ -1006,10 +1267,86 @@ public class BattleViewController {
     }
     
     private void addLogMessage(String message) {
-        Platform.runLater(() -> {
-            logTextArea.appendText(message + "\n");
-            logTextArea.setScrollTop(Double.MAX_VALUE);
+        // Zone de log supprimée - les messages ne sont plus affichés
+    }
+    
+    /**
+     * Affiche une interface de victoire améliorée avec un design moderne
+     */
+    private void showVictoryScreen(Player winner) {
+        Dialog<Void> victoryDialog = new Dialog<>();
+        victoryDialog.setTitle("🎉 VICTOIRE !");
+        victoryDialog.setResizable(false);
+        
+        // Style dark/neon pour le dialogue
+        victoryDialog.getDialogPane().setStyle(
+            "-fx-background-color: #0A0E0D;" +
+            "-fx-border-color: #39FF14;" +
+            "-fx-border-width: 3;" +
+            "-fx-border-radius: 15;"
+        );
+        
+        VBox content = new VBox(25);
+        content.setAlignment(Pos.CENTER);
+        content.setPadding(new Insets(40, 50, 40, 50));
+        content.setStyle("-fx-background-color: #0A0E0D;");
+        
+        // Titre de victoire
+        Label victoryTitle = new Label("🎉 VICTOIRE ! 🎉");
+        victoryTitle.setFont(Font.font("Arial", FontWeight.BOLD, 42));
+        victoryTitle.setTextFill(Color.web("#39FF14"));
+        victoryTitle.setStyle(
+            "-fx-effect: dropshadow(gaussian, rgba(57,255,20,0.8), 20, 0, 0, 0);"
+        );
+        
+        // Nom du gagnant
+        Label winnerLabel = new Label(winner.getName().toUpperCase());
+        winnerLabel.setFont(Font.font("Arial", FontWeight.BOLD, 32));
+        winnerLabel.setTextFill(Color.web("#00FFFF"));
+        winnerLabel.setStyle(
+            "-fx-effect: dropshadow(gaussian, rgba(0,255,255,0.6), 15, 0, 0, 0);"
+        );
+        
+        // Message de victoire
+        Label victoryMessage = new Label("remporte la victoire !");
+        victoryMessage.setFont(Font.font("Arial", FontWeight.NORMAL, 20));
+        victoryMessage.setTextFill(Color.web("#E0E0E0"));
+        
+        // Statistiques du gagnant
+        VBox statsBox = new VBox(10);
+        statsBox.setAlignment(Pos.CENTER);
+        statsBox.setPadding(new Insets(20, 0, 20, 0));
+        
+        int aliveMonsters = 0;
+        for (Monster m : winner.getMonsters()) {
+            if (m.isAlive()) {
+                aliveMonsters++;
+            }
+        }
+        
+        Label statsLabel = new Label("Monstres restants : " + aliveMonsters + "/" + winner.getMonsters().size());
+        statsLabel.setFont(Font.font("Arial", FontWeight.BOLD, 16));
+        statsLabel.setTextFill(Color.web("#50C878"));
+        
+        statsBox.getChildren().add(statsLabel);
+        
+        // Bouton retour au menu
+        Button menuButton = createActionButton("🏠 Retour au Menu", "#39FF14", "#00FF41");
+        menuButton.setPrefWidth(250);
+        menuButton.setPrefHeight(60);
+        menuButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        menuButton.setOnAction(e -> {
+            victoryDialog.close();
+            app.showMainMenu();
         });
+        
+        content.getChildren().addAll(victoryTitle, winnerLabel, victoryMessage, statsBox, menuButton);
+        
+        victoryDialog.getDialogPane().setContent(content);
+        victoryDialog.getDialogPane().getButtonTypes().clear(); // Retirer les boutons par défaut
+        
+        // Afficher le dialogue
+        victoryDialog.showAndWait();
     }
     
     private void showAlert(String title, String message) {
@@ -1074,12 +1411,7 @@ public class BattleViewController {
             statusLabel.setText("En attente de l'action de " + player1.getName());
         }
         
-        // Ajouter les messages de log seulement si le TextArea existe
-        if (logTextArea != null) {
-            addLogMessage("=== Début du combat ===");
-            addLogMessage(player1.getName() + " vs " + player2.getName());
-            addLogMessage(player1.getActiveMonster().getName() + " vs " + player2.getActiveMonster().getName());
-        }
+        // Les messages de début de combat sont supprimés pour simplifier l'interface
         
         // Mettre à jour l'affichage seulement si la scène est créée
         if (root != null) {
