@@ -5,6 +5,28 @@
 ## Description
 Jeu de combat inspiré de Pokémon où deux joueurs s'affrontent avec leurs équipes de monstres. Chaque monstre possède un type élémentaire avec des forces et faiblesses, des attaques spéciales et des capacités uniques.
 
+## Documentation et Ressources
+
+### Vidéo de Démonstration
+Une vidéo de démonstration est disponible dans le projet : [`demo_video.mp4`](demo_video.mp4)
+
+Cette vidéo présente :
+- Le menu principal et la sélection des modes de jeu
+- La sélection d'équipe avec l'interface graphique
+- Le système de combat avec animations et effets visuels
+- Les différentes fonctionnalités de l'interface utilisateur
+- Les interactions avec le bot en mode solo
+
+### Diagramme UML
+Le diagramme de classes UML du projet est disponible : [`diagram_project.png`](diagram_project.png)
+
+Ce diagramme illustre :
+- L'architecture complète du projet
+- Les relations entre les différentes classes
+- L'organisation des packages (models, controllers, gui, services, etc.)
+- Les interactions entre les composants de l'application
+- La structure de l'interface graphique JavaFX
+
 ## Prérequis
 - **Java 11 ou supérieur** (JDK)
 - **JavaFX SDK 17** (inclus dans le projet : `javafx-sdk-17.0.17/`)
