@@ -58,6 +58,14 @@ public class TurnManager {
     }
     
     /**
+     * Retourne la liste des actions en attente (pour les animations)
+     * @return La liste des actions
+     */
+    public List<Action> getActions() {
+        return new ArrayList<>(actions);
+    }
+    
+    /**
      * Exécute toutes les actions dans l'ordre :
      * 1. Changements de monstres
      * 2. Utilisation d'objets

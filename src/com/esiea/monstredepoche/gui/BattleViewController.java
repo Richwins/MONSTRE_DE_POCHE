@@ -17,6 +17,10 @@ import javafx.scene.text.FontWeight;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
+import javafx.animation.TranslateTransition;
+import javafx.animation.FadeTransition;
+import javafx.animation.SequentialTransition;
+import javafx.animation.ParallelTransition;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
@@ -200,6 +204,9 @@ public class BattleViewController {
     // Stockage des références aux barres de vie pour animation
     private Map<Monster, ProgressBar> monsterHpBars = new HashMap<>();
     private Map<Monster, Label> monsterHpLabels = new HashMap<>();
+    
+    // Stockage des références aux cartes de monstres pour animations
+    private Map<Monster, VBox> monsterCards = new HashMap<>();
     
     private Button createStyledButton(String text, String color1, String color2) {
         Button button = new Button(text);
@@ -803,18 +810,27 @@ public class BattleViewController {
                 hpBefore.put(m, m.getHp());
             }
             
-            battleController.processTurn();
+            // Récupérer les actions d'attaque avant l'exécution
+            TurnManager turnManager = battleController.getTurnManager();
+            List<TurnManager.Action> allActions = turnManager.getActions();
+            List<TurnManager.Action> attackActions = new ArrayList<>();
             
-            // Mettre à jour l'affichage pour avoir les nouvelles références des barres
-            updateDisplay();
+            for (TurnManager.Action action : allActions) {
+                if (action.type == TurnManager.Action.ActionType.ATTACK) {
+                    attackActions.add(action);
+                }
+            }
             
-            // Attendre un court instant pour que l'affichage soit mis à jour
-            PauseTransition updatePause = new PauseTransition(Duration.millis(50));
-            updatePause.setOnFinished(e -> {
-                // Animer la progression des barres de vie
-                animateHpBars(hpBefore);
+            // Trier par vitesse (comme dans TurnManager)
+            attackActions.sort((a1, a2) -> {
+                Monster m1 = a1.player.getActiveMonster();
+                Monster m2 = a2.player.getActiveMonster();
+                if (m1 == null || m2 == null) return 0;
+                return Integer.compare(m2.getSpeed(), m1.getSpeed());
             });
-            updatePause.play();
+            
+            // Animer les attaques une par une, puis exécuter le tour
+            animateAttacksSequence(attackActions, hpBefore);
             
             // Vérifier le gagnant
             Player winner = battleController.checkWinner();
@@ -1074,6 +1090,7 @@ public class BattleViewController {
         List<Monster> currentMonsters = new ArrayList<>(player.getMonsters());
         monsterHpBars.entrySet().removeIf(entry -> !currentMonsters.contains(entry.getKey()));
         monsterHpLabels.entrySet().removeIf(entry -> !currentMonsters.contains(entry.getKey()));
+        monsterCards.entrySet().removeIf(entry -> !currentMonsters.contains(entry.getKey()));
         
         for (int i = 0; i < player.getMonsters().size(); i++) {
             Monster monster = player.getMonsters().get(i);
@@ -1161,6 +1178,9 @@ public class BattleViewController {
         }
         
         card.getChildren().addAll(header, hpContainer, typeLabel, statsLabel);
+        
+        // Stocker la référence à la carte pour les animations
+        monsterCards.put(monster, card);
         
         return card;
     }
@@ -1271,10 +1291,219 @@ public class BattleViewController {
     }
     
     /**
+     * Anime les attaques une par une avec des effets visuels, puis exécute le tour
+     */
+    private void animateAttacksSequence(List<TurnManager.Action> attackActions, Map<Monster, Integer> hpBefore) {
+        if (attackActions.isEmpty()) {
+            // Pas d'attaques, exécuter directement le tour
+            executeTurnAfterAnimation(hpBefore);
+            return;
+        }
+        
+        // Animer chaque attaque séquentiellement
+        animateAttackAtIndex(attackActions, 0, hpBefore);
+    }
+    
+    /**
+     * Anime une attaque à l'index donné, puis passe à la suivante
+     */
+    private void animateAttackAtIndex(List<TurnManager.Action> attackActions, int index, Map<Monster, Integer> hpBefore) {
+        if (index >= attackActions.size()) {
+            // Toutes les attaques sont animées, exécuter le tour
+            executeTurnAfterAnimation(hpBefore);
+            return;
+        }
+        
+        TurnManager.Action action = attackActions.get(index);
+        Monster attacker = action.player.getActiveMonster();
+        Player targetPlayer = (action.player == player1) ? player2 : player1;
+        Monster target = targetPlayer.getActiveMonster();
+        
+        if (attacker == null || target == null || !attacker.isAlive() || !target.isAlive()) {
+            // Passer à l'attaque suivante
+            animateAttackAtIndex(attackActions, index + 1, hpBefore);
+            return;
+        }
+        
+        // Récupérer l'attaque utilisée
+        Attack attack = null;
+        if (action.attackIndex >= 0 && action.attackIndex < attacker.getAttacks().size()) {
+            attack = attacker.getAttacks().get(action.attackIndex);
+        }
+        
+        // Créer l'animation d'attaque
+        animateSingleAttack(attacker, target, attack, () -> {
+            // Après l'animation, passer à l'attaque suivante
+            animateAttackAtIndex(attackActions, index + 1, hpBefore);
+        });
+    }
+    
+    /**
+     * Anime une attaque unique avec effets visuels
+     */
+    private void animateSingleAttack(Monster attacker, Monster target, Attack attack, Runnable onComplete) {
+        VBox attackerCard = monsterCards.get(attacker);
+        VBox targetCard = monsterCards.get(target);
+        
+        if (attackerCard == null || targetCard == null) {
+            // Les cartes ne sont pas disponibles, passer directement
+            onComplete.run();
+            return;
+        }
+        
+        // Déterminer la couleur de l'effet selon le type d'attaque
+        String effectColor = getAttackEffectColor(attack, attacker);
+        
+        // Animation 1: Flash sur l'attaquant (préparation)
+        FadeTransition attackerFlash = new FadeTransition(Duration.millis(200), attackerCard);
+        attackerFlash.setFromValue(1.0);
+        attackerFlash.setToValue(0.7);
+        attackerFlash.setAutoReverse(true);
+        attackerFlash.setCycleCount(2);
+        
+        // Animation 2: Tremblement de l'attaquant
+        TranslateTransition attackerShake = new TranslateTransition(Duration.millis(100), attackerCard);
+        attackerShake.setFromX(0);
+        attackerShake.setByX(10);
+        attackerShake.setCycleCount(4);
+        attackerShake.setAutoReverse(true);
+        
+        // Animation 3: Flash de couleur sur la cible (impact)
+        ParallelTransition targetImpact = createImpactAnimation(targetCard, effectColor);
+        
+        // Animation 4: Tremblement de la cible (reçoit les dégâts)
+        TranslateTransition targetShake = new TranslateTransition(Duration.millis(150), targetCard);
+        targetShake.setFromX(0);
+        targetShake.setByX(15);
+        targetShake.setCycleCount(6);
+        targetShake.setAutoReverse(true);
+        
+        // Séquence complète
+        SequentialTransition attackSequence = new SequentialTransition(
+            attackerFlash,
+            attackerShake,
+            new PauseTransition(Duration.millis(100)), // Pause entre préparation et impact
+            targetImpact,
+            targetShake,
+            new PauseTransition(Duration.millis(200)) // Pause après l'impact
+        );
+        
+        attackSequence.setOnFinished(e -> onComplete.run());
+        attackSequence.play();
+    }
+    
+    /**
+     * Crée une animation d'impact avec flash de couleur
+     */
+    private ParallelTransition createImpactAnimation(VBox targetCard, String effectColor) {
+        // Flash de couleur (fade)
+        FadeTransition flash = new FadeTransition(Duration.millis(300), targetCard);
+        flash.setFromValue(1.0);
+        flash.setToValue(0.4);
+        flash.setAutoReverse(true);
+        flash.setCycleCount(2);
+        
+        // Changement de couleur de bordure temporaire avec effet glow
+        String originalStyle = targetCard.getStyle();
+        Timeline colorFlash = new Timeline(
+            new KeyFrame(Duration.ZERO, e -> {
+                // Ajouter un effet de glow coloré
+                String glowColor = effectColor.replace("#", "");
+                int r = Integer.parseInt(glowColor.substring(0, 2), 16);
+                int g = Integer.parseInt(glowColor.substring(2, 4), 16);
+                int b = Integer.parseInt(glowColor.substring(4, 6), 16);
+                String rgbGlow = "rgba(" + r + "," + g + "," + b + ",0.8)";
+                
+                targetCard.setStyle(
+                    originalStyle + 
+                    " -fx-effect: dropshadow(gaussian, " + rgbGlow + ", 30, 0, 0, 0), " +
+                    "dropshadow(gaussian, rgba(0,0,0,0.5), 5, 0, 0, 2);"
+                );
+            }),
+            new KeyFrame(Duration.millis(300), e -> {
+                // Retour au style original
+                targetCard.setStyle(originalStyle);
+            })
+        );
+        
+        ParallelTransition impact = new ParallelTransition(flash, colorFlash);
+        return impact;
+    }
+    
+    /**
+     * Détermine la couleur d'effet selon le type d'attaque
+     */
+    private String getAttackEffectColor(Attack attack, Monster attacker) {
+        if (attack == null) {
+            // Attaque normale (mains nues)
+            return "#FF6B35"; // Orange
+        }
+        
+        switch (attack.getType()) {
+            case ELECTRIC:
+                return "#FFD700"; // Or/jaune pour électricité
+            case WATER:
+                return "#00B4FF"; // Bleu pour eau
+            case GROUND:
+                return "#8B4513"; // Marron pour terre
+            case FIRE:
+                return "#FF3838"; // Rouge pour feu
+            case NATURE:
+                return "#50C878"; // Vert pour nature
+            default:
+                return "#FFFFFF"; // Blanc pour normal
+        }
+    }
+    
+    /**
+     * Exécute le tour après toutes les animations
+     */
+    private void executeTurnAfterAnimation(Map<Monster, Integer> hpBefore) {
+        Platform.runLater(() -> {
+            battleController.processTurn();
+            
+            // Mettre à jour l'affichage pour avoir les nouvelles références des barres
+            updateDisplay();
+            
+            // Attendre un court instant pour que l'affichage soit mis à jour
+            PauseTransition updatePause = new PauseTransition(Duration.millis(50));
+            updatePause.setOnFinished(e -> {
+                // Animer la progression des barres de vie
+                animateHpBars(hpBefore);
+                
+                // Vérifier le gagnant après un court délai
+                PauseTransition checkWinnerPause = new PauseTransition(Duration.millis(600));
+                checkWinnerPause.setOnFinished(e2 -> {
+                    Platform.runLater(() -> {
+                        Player winner = battleController.checkWinner();
+                        if (winner != null) {
+                            // Afficher l'interface de victoire améliorée
+                            showVictoryScreen(winner);
+                            return;
+                        }
+                        
+                        // Nouveau tour
+                        waitingForPlayer1Action = true;
+                        currentPlayer = player1;
+                        currentPlayerLabel.setText("Tour de " + player1.getName());
+                        statusLabel.setText("En attente de l'action de " + player1.getName());
+                        statusLabel.setTextFill(Color.web("#E0E0E0")); // Remettre la couleur normale
+                        updateDisplay();
+                        updateActionButtons();
+                        setActionButtonsEnabled(true); // Réactiver les boutons
+                    });
+                });
+                checkWinnerPause.play();
+            });
+            updatePause.play();
+        });
+    }
+    
+    /**
      * Affiche une interface de victoire améliorée avec un design moderne
      */
     private void showVictoryScreen(Player winner) {
-        Dialog<Void> victoryDialog = new Dialog<>();
+        Dialog<String> victoryDialog = new Dialog<>();
         victoryDialog.setTitle("🎉 VICTOIRE !");
         victoryDialog.setResizable(false);
         
@@ -1336,32 +1565,49 @@ public class BattleViewController {
         menuButton.setPrefHeight(60);
         menuButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         menuButton.setOnAction(e -> {
-            victoryDialog.setResult(null);
+            victoryDialog.setResult("MENU");
             victoryDialog.close();
         });
         
-        // Bouton fermer
-        Button closeButton = createActionButton("❌ Fermer", "#8A8A8A", "#A0A0A0");
-        closeButton.setPrefWidth(200);
-        closeButton.setPrefHeight(50);
-        closeButton.setFont(Font.font("Arial", FontWeight.BOLD, 16));
-        closeButton.setOnAction(e -> {
-            victoryDialog.setResult(null);
+        // Bouton jouer une nouvelle partie
+        Button newGameButton = createActionButton("🎮 Jouer une nouvelle partie", "#00B4FF", "#00D4FF");
+        newGameButton.setPrefWidth(300);
+        newGameButton.setPrefHeight(60);
+        newGameButton.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        newGameButton.setOnAction(e -> {
+            victoryDialog.setResult("NEW_GAME");
             victoryDialog.close();
         });
         
         HBox buttonsBox = new HBox(15);
         buttonsBox.setAlignment(Pos.CENTER);
-        buttonsBox.getChildren().addAll(menuButton, closeButton);
+        buttonsBox.getChildren().addAll(menuButton, newGameButton);
         
         content.getChildren().addAll(victoryTitle, winnerLabel, victoryMessage, statsBox, buttonsBox);
         
         victoryDialog.getDialogPane().setContent(content);
         victoryDialog.getDialogPane().getButtonTypes().clear(); // Retirer les boutons par défaut
         
-        // Afficher le dialogue et retourner au menu après fermeture
-        victoryDialog.showAndWait();
-        app.showMainMenu();
+        // Afficher le dialogue et traiter le résultat
+        victoryDialog.showAndWait().ifPresent(result -> {
+            if ("MENU".equals(result)) {
+                Platform.runLater(() -> {
+                    app.showMainMenu();
+                });
+            } else if ("NEW_GAME".equals(result)) {
+                Platform.runLater(() -> {
+                    restartGame();
+                });
+            }
+        });
+    }
+    
+    /**
+     * Réinitialise le jeu et retourne à la sélection d'équipe
+     */
+    private void restartGame() {
+        // Retourner à la sélection d'équipe avec le même mode (solo ou 1v1)
+        app.showTeamSelection(soloMode);
     }
     
     private void showAlert(String title, String message) {
