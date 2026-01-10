@@ -8,7 +8,9 @@ Jeu de combat inspiré de Pokémon où deux joueurs s'affrontent avec leurs équ
 ## Documentation et Ressources
 
 ### Vidéo de Démonstration
-Une vidéo de démonstration est disponible dans le projet : [`demo_video.mp4`](demo_video.mp4)
+Une vidéo de démonstration est disponible dans le projet : [`demo_video.zip`](demo_video.zip)
+
+**Note :** La vidéo est compressée dans un fichier ZIP. Veuillez extraire le fichier `demo_video.zip` pour accéder à la vidéo de démonstration.
 
 Cette vidéo présente :
 - Le menu principal et la sélection des modes de jeu
